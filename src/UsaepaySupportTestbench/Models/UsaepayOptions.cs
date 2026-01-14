@@ -1,0 +1,15 @@
+namespace UsaepaySupportTestbench.Models;
+
+public sealed class UsaepayOptions
+{
+    public UsaepayEnvironmentOptions Sandbox { get; set; } = new();
+    public UsaepayEnvironmentOptions Production { get; set; } = new();
+}
+
+public sealed class UsaepayEnvironmentOptions
+{
+    public string RestBaseUrl { get; set; } = string.Empty;
+    public string SoapEndpoint { get; set; } = string.Empty;
+    public string? ApiKey { get; set; }
+    public string? ApiSecret { get; set; }
+}

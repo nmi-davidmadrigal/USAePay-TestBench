@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - USAePay Support Testbench</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">USAePay Support Testbench</div>
+        <nav class="topnav">
+            <a asp-page="/Index">Dashboard</a>
+            <a asp-page="/Scenarios/Index">Scenarios</a>
+            <a asp-page="/Presets/Index">Presets</a>
+            <a asp-page="/Manual/Index">Manual Requests</a>
+            <a asp-page="/PayJs/Index">Pay.js Playground</a>
+            <a asp-page="/Logs/Index">Logs</a>
+        </nav>
+    </header>
+
+    <div class="app-shell">
+        <aside class="left-rail">
+            <partial name="_ScenarioRail" />
+        </aside>
+
+        <main class="main-content">
+            @RenderBody()
+        </main>
+
+        <aside class="right-rail">
+            @RenderSection("RightRail", required: false)
+        </aside>
+    </div>
+
+    <footer class="footer">
+        Internal support tool. Do not share production data.
+    </footer>
+</body>
+</html>

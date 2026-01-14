@@ -1,0 +1,59 @@
+@page
+@model UsaepaySupportTestbench.Pages.PayJs.IndexModel
+@{
+    ViewData["Title"] = "Pay.js Playground";
+}
+
+<h1>Pay.js Playground</h1>
+
+<div class="panel">
+    <p>This page hosts Pay.js fields in the browser. Configure Pay.js keys in user-secrets.</p>
+    <div id="payjs-card"></div>
+    <button type="button" onclick="tokenize()">Tokenize</button>
+</div>
+
+<div class="panel">
+    <h2>Last Token</h2>
+    @if (string.IsNullOrWhiteSpace(Model.LastToken))
+    {
+        <p>No token captured yet.</p>
+    }
+    else
+    {
+        <p><strong>Token:</strong> @Model.LastToken</p>
+        @if (!string.IsNullOrWhiteSpace(Model.LastPaymentKey))
+        {
+            <p><strong>Payment Key:</strong> @Model.LastPaymentKey</p>
+        }
+    }
+</div>
+
+@section RightRail {
+    <div class="panel">
+        <h3>Diagnostics</h3>
+        <p>Pay.js is client-side only. Tokens are stored in session for request builders.</p>
+    </div>
+}
+
+<script src="https://sandbox.usaepay.com/js/pay.js"></script>
+<script>
+    // TODO: Replace with real Pay.js configuration from user-secrets.
+    const payjsConfig = {
+        key: 'sandbox-public-key',
+        container: '#payjs-card'
+    };
+
+    function tokenize() {
+        // TODO: Replace with Pay.js tokenization callbacks.
+        const payload = {
+            token: 'stub-token-' + Date.now(),
+            paymentKey: 'stub-payment-key'
+        };
+
+        fetch('/api/payjs/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(() => window.location.reload());
+    }
+</script>

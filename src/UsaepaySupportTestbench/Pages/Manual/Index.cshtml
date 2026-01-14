@@ -1,0 +1,164 @@
+@page
+@model UsaepaySupportTestbench.Pages.Manual.IndexModel
+@{
+    ViewData["Title"] = "Manual Requests";
+}
+
+<h1>Manual Requests</h1>
+
+@if (Model.Environment == EnvironmentType.Production)
+{
+    <div class="warning">
+        Production environment selected. Confirm before sending.
+    </div>
+}
+
+<form method="post">
+    <div class="panel">
+        <p>Use REST fields for REST requests and SOAP fields for SOAP requests.</p>
+        <div class="form-row">
+            <div>
+                <label>API Type</label>
+                <select asp-for="ApiType" asp-items="Html.GetEnumSelectList<ApiType>()"></select>
+            </div>
+            <div>
+                <label>Environment</label>
+                <select asp-for="Environment" asp-items="Html.GetEnumSelectList<EnvironmentType>()"></select>
+            </div>
+            <div>
+                <label>Confirm Production</label>
+                <select asp-for="ConfirmProduction">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>REST Method</label>
+                <input asp-for="Method" />
+            </div>
+            <div>
+                <label>REST Path or Full URL</label>
+                <input asp-for="PathOrUrl" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>SOAP Action</label>
+                <input asp-for="SoapAction" />
+            </div>
+            <div>
+                <label>SOAP Endpoint Override</label>
+                <input asp-for="EndpointUrl" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>Headers (JSON)</label>
+                <textarea asp-for="HeadersJson"></textarea>
+            </div>
+            <div>
+                <label>Body (JSON or XML)</label>
+                <textarea asp-for="Body" id="manual-body"></textarea>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>Ticket Number (optional)</label>
+                <input asp-for="TicketNumber" />
+            </div>
+            <div>
+                <label>Save as Preset</label>
+                <select asp-for="SaveAsPreset">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+            <div>
+                <label>Preset Name</label>
+                <input asp-for="PresetName" />
+            </div>
+        </div>
+
+        <button type="submit">Send Request</button>
+    </div>
+
+    @if (!ModelState.IsValid)
+    {
+        <div class="warning">
+            @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@error.ErrorMessage</div>
+            }
+        </div>
+    }
+</form>
+
+<div class="panel">
+    <h2>Pay.js Token Helper</h2>
+    @if (string.IsNullOrWhiteSpace(Model.LastToken))
+    {
+        <p>No Pay.js token captured yet. Visit the Pay.js Playground.</p>
+    }
+    else
+    {
+        <p><strong>Token:</strong> @Model.LastToken</p>
+        @if (!string.IsNullOrWhiteSpace(Model.LastPaymentKey))
+        {
+            <p><strong>Payment Key:</strong> @Model.LastPaymentKey</p>
+        }
+        <button type="button" class="secondary" onclick="injectToken()">Inject token into body</button>
+    }
+</div>
+
+@section RightRail {
+    <div class="panel">
+        <h3>Response Viewer</h3>
+        @if (Model.Response is null)
+        {
+            <p>No response yet.</p>
+        }
+        else
+        {
+            <div><strong>Status:</strong> @Model.Response.StatusCode</div>
+            <div><strong>Latency:</strong> @Model.Response.LatencyMs ms</div>
+            <textarea readonly>@Model.Response.Body</textarea>
+        }
+    </div>
+    <div class="panel">
+        <h3>Diagnostics</h3>
+        @if (Model.Diagnostics.Count == 0)
+        {
+            <p>No diagnostics available.</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var message in Model.Diagnostics)
+                {
+                    <li>@message</li>
+                }
+            </ul>
+        }
+    </div>
+    <div class="panel">
+        <h3>Redacted Request</h3>
+        <textarea readonly>@Model.RedactedRequest</textarea>
+    </div>
+}
+
+<script>
+    function injectToken() {
+        const token = @System.Text.Json.JsonSerializer.Serialize(Model.LastToken ?? string.Empty);
+        const bodyField = document.getElementById('manual-body');
+        if (!bodyField || !token) {
+            return;
+        }
+        bodyField.value = bodyField.value + '\n' + token;
+    }
+</script>

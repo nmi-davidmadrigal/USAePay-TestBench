@@ -1,0 +1,101 @@
+@page
+@model UsaepaySupportTestbench.Pages.Presets.EditModel
+@{
+    ViewData["Title"] = "Preset Builder";
+}
+
+<h1>Preset Builder</h1>
+
+@if (Model.Preset.Environment == EnvironmentType.Production)
+{
+    <div class="warning">
+        Production preset selected. Confirm intent before running.
+    </div>
+}
+
+<form method="post">
+    <div class="panel">
+        <input type="hidden" asp-for="Preset.Id" />
+        <div class="form-row">
+            <div>
+                <label>Name</label>
+                <input asp-for="Preset.Name" />
+            </div>
+            <div>
+                <label>API Type</label>
+                <select asp-for="Preset.ApiType" asp-items="Html.GetEnumSelectList<ApiType>()"></select>
+            </div>
+            <div>
+                <label>Environment</label>
+                <select asp-for="Preset.Environment" asp-items="Html.GetEnumSelectList<EnvironmentType>()"></select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>REST Method</label>
+                <input asp-for="Preset.RestMethod" />
+            </div>
+            <div>
+                <label>REST Path or Endpoint</label>
+                <input asp-for="Preset.RestPathOrEndpoint" />
+            </div>
+            <div>
+                <label>SOAP Action</label>
+                <input asp-for="Preset.SoapAction" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>Headers (JSON)</label>
+                <textarea asp-for="Preset.HeadersJson"></textarea>
+            </div>
+            <div>
+                <label>Variables (JSON)</label>
+                <textarea asp-for="Preset.VariablesJson"></textarea>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>Body Template (JSON or XML)</label>
+                <textarea asp-for="Preset.BodyTemplate"></textarea>
+            </div>
+            <div>
+                <label>Notes</label>
+                <textarea asp-for="Preset.Notes"></textarea>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>Tags (JSON array)</label>
+                <input asp-for="Preset.TagsJson" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div>
+                <label>Quick Preset</label>
+                <select asp-for="Preset.IsQuickPreset">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+            <div>
+                <label>System Preset</label>
+                <select asp-for="Preset.IsSystemPreset">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit">Save Preset</button>
+        @if (Model.Preset.Id != Guid.Empty)
+        {
+            <button class="secondary" type="submit" asp-page-handler="Delete" asp-route-id="@Model.Preset.Id">Delete</button>
+        }
+    </div>
+</form>
