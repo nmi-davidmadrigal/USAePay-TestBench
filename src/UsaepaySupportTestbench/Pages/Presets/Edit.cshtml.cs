@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using UsaepaySupportTestbench.Models;
@@ -30,6 +31,18 @@ public class EditModel(PresetService presetService) : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (!string.IsNullOrWhiteSpace(Preset.HeadersJson))
+        {
+            try
+            {
+                JsonSerializer.Deserialize<Dictionary<string, string>>(Preset.HeadersJson);
+            }
+            catch (JsonException)
+            {
+                ModelState.AddModelError($"{nameof(Preset)}.{nameof(Preset.HeadersJson)}", "Headers JSON is invalid.");
+            }
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();

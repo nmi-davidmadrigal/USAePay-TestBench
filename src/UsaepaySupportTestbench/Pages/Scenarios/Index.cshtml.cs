@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using UsaepaySupportTestbench.Models;
@@ -49,6 +50,10 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
+            }
+            catch (JsonException)
+            {
+                ModelState.AddModelError(string.Empty, "Headers JSON is invalid.");
             }
         }
 
