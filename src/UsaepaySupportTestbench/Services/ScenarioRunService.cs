@@ -23,6 +23,7 @@ public sealed class ScenarioRunService(
     public async Task<List<ScenarioRun>> GetRecentErrorsAsync(int take = 5)
     {
         return await dbContext.ScenarioRuns
+            .Include(r => r.Preset)
             .Where(r => r.HttpStatus >= 400 || r.SoapFault == true)
             .OrderByDescending(r => r.CreatedAt)
             .Take(take)
