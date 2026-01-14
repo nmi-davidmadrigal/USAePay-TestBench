@@ -1,10 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using UsaepaySupportTestbench.Data;
 
 #nullable disable
 
 namespace UsaepaySupportTestbench.Migrations;
 
+[DbContext(typeof(ApplicationDbContext))]
+[Migration("20260114000100_InitialCreate")]
 public partial class InitialCreate : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
