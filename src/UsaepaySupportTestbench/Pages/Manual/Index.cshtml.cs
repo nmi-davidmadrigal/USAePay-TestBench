@@ -93,83 +93,102 @@ public class IndexModel(
             return Page();
         }
 
-        if (ApiType == ApiType.Rest)
+        switch (ApiType)
         {
-            var request = new ProxyRestRequest
+            case ApiType.Rest:
             {
-                Environment = Environment,
-                Method = Method,
-                PathOrUrl = PathOrUrl,
-                Headers = headers,
-                Body = Body,
-                TicketNumber = TicketNumber,
-                ConfirmProduction = ConfirmProduction
-            };
-
-            Response = await restProxyService.ExecuteAsync(request, cancellationToken);
-            await scenarioRunService.RecordRestAsync(request, Response);
-            RedactedRequest = redactionService.Redact(JsonSerializer.Serialize(new
-            {
-                request.Method,
-                request.PathOrUrl,
-                request.Headers,
-                request.Body
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            Diagnostics = BuildDiagnostics(Response);
-
-            if (SaveAsPreset)
-            {
-                await presetService.UpsertAsync(new Preset
+                var request = new ProxyRestRequest
                 {
-                    Name = PresetName ?? "Manual REST Preset",
-                    ApiType = ApiType.Rest,
                     Environment = Environment,
-                    RestMethod = Method,
-                    RestPathOrEndpoint = PathOrUrl,
-                    HeadersJson = HeadersJson,
-                    BodyTemplate = Body,
-                    Notes = $"Saved from Manual Requests on {DateTime.UtcNow:O}"
-                });
-            }
-        }
-        else
-        {
-            var request = new ProxySoapRequest
-            {
-                Environment = Environment,
-                SoapAction = SoapAction,
-                EndpointUrl = EndpointUrl,
-                Headers = headers,
-                Body = Body,
-                TicketNumber = TicketNumber,
-                ConfirmProduction = ConfirmProduction
-            };
+                    Method = Method,
+                    PathOrUrl = PathOrUrl,
+                    Headers = headers,
+                    Body = Body,
+                    TicketNumber = TicketNumber,
+                    ConfirmProduction = ConfirmProduction
+                };
 
-            Response = await soapProxyService.ExecuteAsync(request, cancellationToken);
-            await scenarioRunService.RecordSoapAsync(request, Response);
-            RedactedRequest = redactionService.Redact(JsonSerializer.Serialize(new
-            {
-                request.SoapAction,
-                request.EndpointUrl,
-                request.Headers,
-                request.Body
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            Diagnostics = BuildDiagnostics(Response);
-
-            if (SaveAsPreset)
-            {
-                await presetService.UpsertAsync(new Preset
+                Response = await restProxyService.ExecuteAsync(request, cancellationToken);
+                await scenarioRunService.RecordRestAsync(request, Response);
+                RedactedRequest = redactionService.Redact(JsonSerializer.Serialize(new
                 {
-                    Name = PresetName ?? "Manual SOAP Preset",
-                    ApiType = ApiType.Soap,
+                    request.Method,
+                    request.PathOrUrl,
+                    request.Headers,
+                    request.Body
+                }, new JsonSerializerOptions { WriteIndented = true }));
+                Diagnostics = BuildDiagnostics(Response);
+
+                if (SaveAsPreset)
+                {
+                    await presetService.UpsertAsync(new Preset
+                    {
+                        Name = PresetName ?? "Manual REST Preset",
+                        ApiType = ApiType.Rest,
+                        Environment = Environment,
+                        RestMethod = Method,
+                        RestPathOrEndpoint = PathOrUrl,
+                        HeadersJson = HeadersJson,
+                        BodyTemplate = Body,
+                        Notes = $"Saved from Manual Requests on {DateTime.UtcNow:O}"
+                    });
+                }
+
+                break;
+            }
+
+            case ApiType.Soap:
+            {
+                var request = new ProxySoapRequest
+                {
                     Environment = Environment,
                     SoapAction = SoapAction,
-                    RestPathOrEndpoint = EndpointUrl,
-                    HeadersJson = HeadersJson,
-                    BodyTemplate = Body,
-                    Notes = $"Saved from Manual Requests on {DateTime.UtcNow:O}"
-                });
+                    EndpointUrl = EndpointUrl,
+                    Headers = headers,
+                    Body = Body,
+                    TicketNumber = TicketNumber,
+                    ConfirmProduction = ConfirmProduction
+                };
+
+                Response = await soapProxyService.ExecuteAsync(request, cancellationToken);
+                await scenarioRunService.RecordSoapAsync(request, Response);
+                RedactedRequest = redactionService.Redact(JsonSerializer.Serialize(new
+                {
+                    request.SoapAction,
+                    request.EndpointUrl,
+                    request.Headers,
+                    request.Body
+                }, new JsonSerializerOptions { WriteIndented = true }));
+                Diagnostics = BuildDiagnostics(Response);
+
+                if (SaveAsPreset)
+                {
+                    await presetService.UpsertAsync(new Preset
+                    {
+                        Name = PresetName ?? "Manual SOAP Preset",
+                        ApiType = ApiType.Soap,
+                        Environment = Environment,
+                        SoapAction = SoapAction,
+                        RestPathOrEndpoint = EndpointUrl,
+                        HeadersJson = HeadersJson,
+                        BodyTemplate = Body,
+                        Notes = $"Saved from Manual Requests on {DateTime.UtcNow:O}"
+                    });
+                }
+
+                break;
             }
+
+            case ApiType.PayJsFlow:
+                // Pay.js tokenization is a client-side flow and should never be proxied
+                // as REST/SOAP from this page.
+                ModelState.AddModelError(string.Empty,
+                    "PayJsFlow is a client-side tokenization flow and cannot be executed from Manual Requests. Use the Pay.js Playground page.");
+                return Page();
+
+            default:
+                ModelState.AddModelError(string.Empty, $"Unsupported API type: {ApiType}");
+                return Page();
         }
 
         return Page();
