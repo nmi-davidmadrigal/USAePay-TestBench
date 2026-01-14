@@ -1,0 +1,91 @@
+@page
+@model UsaepaySupportTestbench.Pages.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>Dashboard</h1>
+
+<div class="panel">
+    <h2>Environment Status</h2>
+    <div>
+        <span class="badge">Sandbox</span>
+        <span>@(Model.EnvironmentStatus.SandboxConfigured ? "Configured" : "Missing base URLs")</span>
+    </div>
+    <div>
+        <span class="badge">Production</span>
+        <span>@(Model.EnvironmentStatus.ProductionConfigured ? "Configured" : "Missing base URLs")</span>
+    </div>
+    <p>Reachability checks are best-effort; use Manual Requests for live validation.</p>
+</div>
+
+<div class="panel">
+    <h2>Recent Scenario Runs</h2>
+    @if (!Model.RecentRuns.Any())
+    {
+        <p>No runs yet.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Preset</th>
+                <th>API</th>
+                <th>Environment</th>
+                <th>Status</th>
+                <th>Latency</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var run in Model.RecentRuns)
+            {
+                <tr>
+                    <td>@(run.Preset?.Name ?? "Manual")</td>
+                    <td>@run.ApiType</td>
+                    <td>@run.Environment</td>
+                    <td>@(run.HttpStatus?.ToString() ?? "N/A")</td>
+                    <td>@run.LatencyMs ms</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+<div class="panel">
+    <h2>Recently Used Presets</h2>
+    @if (!Model.RecentPresets.Any())
+    {
+        <p>No presets found.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var preset in Model.RecentPresets)
+            {
+                <li>
+                    <a asp-page="/Presets/Edit" asp-route-id="@preset.Id">@preset.Name</a>
+                    <span class="badge">@preset.ApiType</span>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<div class="panel">
+    <h2>Last Errors</h2>
+    @if (!Model.RecentErrors.Any())
+    {
+        <p>No errors captured yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var error in Model.RecentErrors)
+            {
+                <li>@(error.Preset?.Name ?? "Manual") - @(error.HttpStatus?.ToString() ?? "SOAP Fault")</li>
+            }
+        </ul>
+    }
+</div>

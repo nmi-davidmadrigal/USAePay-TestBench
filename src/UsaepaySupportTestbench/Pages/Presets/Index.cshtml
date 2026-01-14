@@ -1,0 +1,42 @@
+@page
+@model UsaepaySupportTestbench.Pages.Presets.IndexModel
+@{
+    ViewData["Title"] = "Presets";
+}
+
+<h1>Presets</h1>
+
+<p>
+    <a asp-page="/Presets/Edit">Create New Preset</a>
+</p>
+
+<div class="panel">
+    @if (!Model.Presets.Any())
+    {
+        <p>No presets available.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>API</th>
+                <th>Environment</th>
+                <th>Updated</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var preset in Model.Presets)
+            {
+                <tr>
+                    <td><a asp-page="/Presets/Edit" asp-route-id="@preset.Id">@preset.Name</a></td>
+                    <td>@preset.ApiType</td>
+                    <td>@preset.Environment</td>
+                    <td>@preset.UpdatedAt.ToLocalTime()</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

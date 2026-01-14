@@ -1,0 +1,74 @@
+@page
+@model UsaepaySupportTestbench.Pages.Logs.IndexModel
+@{
+    ViewData["Title"] = "Logs";
+}
+
+<h1>Logs</h1>
+
+<div class="panel">
+    <h2>Scenario Runs</h2>
+    @if (!Model.Runs.Any())
+    {
+        <p>No runs recorded.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Preset</th>
+                <th>API</th>
+                <th>Status</th>
+                <th>Latency</th>
+                <th>Created</th>
+                <th>View</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var run in Model.Runs)
+            {
+                <tr>
+                    <td>@(run.Preset?.Name ?? "Manual")</td>
+                    <td>@run.ApiType</td>
+                    <td>@(run.HttpStatus?.ToString() ?? "SOAP")</td>
+                    <td>@run.LatencyMs ms</td>
+                    <td>@run.CreatedAt.ToLocalTime()</td>
+                    <td><a asp-page="/Logs/Index" asp-route-id="@run.Id">Open</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section RightRail {
+    <div class="panel">
+        <h3>Run Details</h3>
+        @if (Model.SelectedRun is null)
+        {
+            <p>Select a run to view details.</p>
+        }
+        else
+        {
+            <div><strong>Preset:</strong> @(Model.SelectedRun.Preset?.Name ?? "Manual")</div>
+            <div><strong>Status:</strong> @(Model.SelectedRun.HttpStatus?.ToString() ?? "SOAP")</div>
+            <div><strong>Latency:</strong> @Model.SelectedRun.LatencyMs ms</div>
+            <div><strong>Correlation:</strong> @Model.SelectedRun.CorrelationId</div>
+            <form method="post" asp-page-handler="Export" asp-route-id="@Model.SelectedRun.Id">
+                <button type="submit" class="secondary">Export Redacted Bundle</button>
+            </form>
+        }
+    </div>
+    @if (Model.SelectedRun is not null)
+    {
+        <div class="panel">
+            <h3>Request (Redacted)</h3>
+            <textarea readonly>@Model.SelectedRun.RequestRedacted</textarea>
+        </div>
+        <div class="panel">
+            <h3>Response (Redacted)</h3>
+            <textarea readonly>@Model.SelectedRun.ResponseRedacted</textarea>
+        </div>
+    }
+}

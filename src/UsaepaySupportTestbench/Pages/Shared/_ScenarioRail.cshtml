@@ -1,0 +1,44 @@
+@inject PresetService PresetService
+
+@{
+    var quickPresets = await PresetService.GetQuickPresetsAsync(6);
+    var customPresets = await PresetService.GetCustomPresetsAsync(6);
+}
+
+<div class="rail-section">
+    <h3>Quick Presets</h3>
+    @if (!quickPresets.Any())
+    {
+        <p>No quick presets yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var preset in quickPresets)
+            {
+                <li>
+                    <a asp-page="/Presets/Edit" asp-route-id="@preset.Id">@preset.Name</a>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<div class="rail-section">
+    <h3>Custom Presets</h3>
+    @if (!customPresets.Any())
+    {
+        <p>No custom presets yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var preset in customPresets)
+            {
+                <li>
+                    <a asp-page="/Presets/Edit" asp-route-id="@preset.Id">@preset.Name</a>
+                </li>
+            }
+        </ul>
+    }
+</div>

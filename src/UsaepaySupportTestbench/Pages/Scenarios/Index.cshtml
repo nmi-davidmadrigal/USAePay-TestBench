@@ -1,0 +1,112 @@
+@page
+@model UsaepaySupportTestbench.Pages.Scenarios.IndexModel
+@{
+    ViewData["Title"] = "Scenarios";
+}
+
+<h1>Scenarios</h1>
+
+<form method="get" class="panel">
+    <div class="form-row">
+        <div>
+            <label>Search</label>
+            <input asp-for="SearchTerm" />
+        </div>
+        <div>
+            <label>API Type</label>
+            <select asp-for="FilterApiType" asp-items="Html.GetEnumSelectList<ApiType>()">
+                <option value="">All</option>
+            </select>
+        </div>
+        <div>
+            <label>&nbsp;</label>
+            <button type="submit">Filter</button>
+        </div>
+    </div>
+</form>
+
+@if (!ModelState.IsValid)
+{
+    <div class="warning">
+        @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+<div class="panel">
+    <h2>Preset Library</h2>
+    @if (!Model.Presets.Any())
+    {
+        <p>No presets available.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>API</th>
+                <th>Environment</th>
+                <th>Tags</th>
+                <th>Run</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var preset in Model.Presets)
+            {
+                <tr>
+                    <td><a asp-page="/Presets/Edit" asp-route-id="@preset.Id">@preset.Name</a></td>
+                    <td>@preset.ApiType</td>
+                    <td>@preset.Environment</td>
+                    <td>@preset.TagsJson</td>
+                    <td>
+                        <form method="post" asp-page-handler="Run" asp-route-id="@preset.Id">
+                            <input type="hidden" name="TicketNumber" value="@Model.TicketNumber" />
+                            <input type="hidden" name="ConfirmProduction" value="@Model.ConfirmProduction" />
+                            <button type="submit">Run</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+<div class="panel">
+    <h2>Run Controls</h2>
+    <form method="get">
+        <div class="form-row">
+            <div>
+                <label>Ticket Number (optional)</label>
+                <input asp-for="TicketNumber" />
+            </div>
+            <div>
+                <label>Production Confirmation</label>
+                <select asp-for="ConfirmProduction">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="secondary">Apply to Runs</button>
+    </form>
+</div>
+
+@section RightRail {
+    <div class="panel">
+        <h3>Last Run</h3>
+        @if (Model.LastRun is null)
+        {
+            <p>No run executed during this session.</p>
+        }
+        else
+        {
+            <div><strong>Preset:</strong> @(Model.LastRun.PresetId?.ToString() ?? "Manual")</div>
+            <div><strong>Status:</strong> @(Model.LastRun.HttpStatus?.ToString() ?? "SOAP")</div>
+            <div><strong>Latency:</strong> @Model.LastRun.LatencyMs ms</div>
+        }
+    </div>
+}
