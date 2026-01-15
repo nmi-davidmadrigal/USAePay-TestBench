@@ -20,13 +20,13 @@ dotnet ef database update --project src/UsaepaySupportTestbench
 ## Configuration
 Edit `appsettings.json` for base URLs. Store credentials in user-secrets:
 ```bash
-dotnet user-secrets set "Usaepay:Sandbox:ApiKey" "sandbox-key" --project src/UsaepaySupportTestbench
-dotnet user-secrets set "Usaepay:Sandbox:ApiSecret" "sandbox-secret" --project src/UsaepaySupportTestbench
-dotnet user-secrets set "Usaepay:Production:ApiKey" "prod-key" --project src/UsaepaySupportTestbench
-dotnet user-secrets set "Usaepay:Production:ApiSecret" "prod-secret" --project src/UsaepaySupportTestbench
+dotnet user-secrets set "Usaepay:Sandbox:SourceKey" "sandbox-source-key" --project src/UsaepaySupportTestbench
+dotnet user-secrets set "Usaepay:Sandbox:Pin" "sandbox-pin" --project src/UsaepaySupportTestbench
+dotnet user-secrets set "Usaepay:Production:SourceKey" "prod-source-key" --project src/UsaepaySupportTestbench
+dotnet user-secrets set "Usaepay:Production:Pin" "prod-pin" --project src/UsaepaySupportTestbench
 ```
 
-> Note: The proxy endpoints are server-side only. Configure headers and auth per request in the UI.
+> Note: You can also enter Source Key + PIN from the Scenarios page; credentials entered there are stored in-session only.
 
 ## Features
 - REST and SOAP proxy endpoints: `POST /api/proxy/rest`, `POST /api/proxy/soap`
