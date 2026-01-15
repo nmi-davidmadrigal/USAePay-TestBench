@@ -107,7 +107,7 @@
                         <form method="post" asp-page-handler="Run" asp-route-id="@preset.Id">
                             <input type="hidden" name="id" value="@preset.Id" />
                             <input type="hidden" name="TicketNumber" value="@Model.TicketNumber" />
-                            <input type="hidden" name="ConfirmProduction" value="@Model.ConfirmProduction" />
+                            <input type="hidden" name="ConfirmProduction" value="@(Model.ConfirmProduction ? "true" : "false")" />
                             <button type="submit">Run</button>
                         </form>
                     </td>
