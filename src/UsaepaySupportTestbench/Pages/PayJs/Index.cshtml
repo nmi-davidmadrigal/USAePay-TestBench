@@ -92,7 +92,12 @@
     const publicKeyInput = document.getElementById('PublicKey');
     const errorContainer = document.getElementById('paymentCardErrorContainer');
     const cardContainer = document.getElementById('paymentCardContainer');
-    const sessionTokenInput = document.getElementById('txtSessionToken');
+
+    function getSessionTokenInput() {
+        // Note: the right-rail is rendered after main content in the layout,
+        // so this element may not exist when this script first executes.
+        return document.getElementById('txtSessionToken');
+    }
 
     let client = null;
     let paymentCard = null;
@@ -211,7 +216,10 @@
             }
 
             // Display for copy.
-            sessionTokenInput.value = paymentKey;
+            const tokenInput = getSessionTokenInput();
+            if (tokenInput) {
+                tokenInput.value = paymentKey;
+            }
 
             // Save to server-side session (so Manual Requests can reference it).
             await fetch('/api/payjs/token', {
@@ -227,15 +235,18 @@
     document.getElementById('btnInitPayJs').addEventListener('click', initializePayJs);
     document.getElementById('btnTokenize').addEventListener('click', createToken);
     document.getElementById('btnCopyToken').addEventListener('click', async () => {
-        const val = sessionTokenInput.value || '';
+        const tokenInput = getSessionTokenInput();
+        const val = (tokenInput && tokenInput.value) ? tokenInput.value : '';
         if (!val) return;
         try {
             await navigator.clipboard.writeText(val);
         } catch {
             // Fallback
-            sessionTokenInput.focus();
-            sessionTokenInput.select();
-            document.execCommand('copy');
+            if (tokenInput) {
+                tokenInput.focus();
+                tokenInput.select();
+                document.execCommand('copy');
+            }
         }
     });
 </script>
