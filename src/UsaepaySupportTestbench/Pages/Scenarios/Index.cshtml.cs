@@ -64,6 +64,8 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
             try
             {
                 LastRun = await scenarioRunService.ExecutePresetAsync(preset, TicketNumber, ConfirmProduction, cancellationToken);
+                // Show results immediately (request/response are on the Logs page).
+                return RedirectToPage("/Logs/Index", new { id = LastRun.Id });
             }
             catch (InvalidOperationException ex)
             {
