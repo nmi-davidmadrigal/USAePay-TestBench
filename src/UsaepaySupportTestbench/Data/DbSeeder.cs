@@ -8,12 +8,8 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext dbContext)
     {
-        if (await dbContext.Presets.AnyAsync())
-        {
-            return;
-        }
-
-        var presets = new List<Preset>
+        // Keep custom presets; upsert the system preset library so updates ship automatically.
+        var systemPresets = new List<Preset>
         {
             new()
             {
@@ -28,21 +24,33 @@ public static class DbSeeder
                 }),
                 BodyTemplate = """
                 {
-                  "amount": "12.34",
-                  "cardNumber": "{{cardNumber}}",
-                  "expDate": "{{expDate}}",
-                  "cvv": "{{cvv}}",
+                  "command": "cc:sale",
+                  "amount": "5.00",
+                  "amount_detail": {
+                    "tax": "1.00",
+                    "tip": "0.50"
+                  },
+                  "creditcard": {
+                    "cardholder": "{{cardholder}}",
+                    "number": "{{cardNumber}}",
+                    "expiration": "{{expiration}}",
+                    "cvc": "{{cvc}}",
+                    "avs_street": "{{avsStreet}}",
+                    "avs_zip": "{{avsZip}}"
+                  },
                   "invoice": "INV-{{timestamp}}"
                 }
                 """,
                 VariablesJson = JsonSerializer.Serialize(new Dictionary<string, string>
                 {
-                    ["cardNumber"] = "4111111111111111",
-                    ["expDate"] = "1228",
-                    ["cvv"] = "123",
-                    ["timestamp"] = DateTime.UtcNow.ToString("yyyyMMddHHmmss")
+                    ["cardholder"] = "John Doe",
+                    ["cardNumber"] = "4000100011112224",
+                    ["expiration"] = "1228",
+                    ["cvc"] = "123",
+                    ["avsStreet"] = "1234 Main",
+                    ["avsZip"] = "12345"
                 }),
-                Notes = "Generic sample sale payload. Replace with real USAePay fields as needed.",
+                Notes = "Matches USAePay REST docs sample for /v2/transactions (cc:sale).",
                 TagsJson = "[\"quick\",\"rest\",\"sale\"]",
                 IsQuickPreset = true,
                 IsSystemPreset = true
@@ -90,7 +98,7 @@ public static class DbSeeder
                 {
                     ["Content-Type"] = "application/json"
                 }),
-                BodyTemplate = "{ \"amount\": 12.34, \"cardNumber\": \"4111111111111111\", ",
+                BodyTemplate = "{ \"command\": \"cc:sale\", \"amount\": \"5.00\", \"creditcard\": { \"number\": \"4000100011112224\", ",
                 Notes = "Intentional malformed JSON to test validation errors.",
                 TagsJson = "[\"quick\",\"rest\",\"malformed\"]",
                 IsQuickPreset = true,
@@ -98,7 +106,32 @@ public static class DbSeeder
             }
         };
 
-        dbContext.Presets.AddRange(presets);
+        foreach (var preset in systemPresets)
+        {
+            var existing = await dbContext.Presets.FirstOrDefaultAsync(p =>
+                p.IsSystemPreset && p.Name == preset.Name && p.Environment == preset.Environment && p.ApiType == preset.ApiType);
+
+            if (existing is null)
+            {
+                preset.CreatedAt = DateTime.UtcNow;
+                preset.UpdatedAt = DateTime.UtcNow;
+                dbContext.Presets.Add(preset);
+                continue;
+            }
+
+            existing.RestMethod = preset.RestMethod;
+            existing.RestPathOrEndpoint = preset.RestPathOrEndpoint;
+            existing.SoapAction = preset.SoapAction;
+            existing.HeadersJson = preset.HeadersJson;
+            existing.BodyTemplate = preset.BodyTemplate;
+            existing.VariablesJson = preset.VariablesJson;
+            existing.Notes = preset.Notes;
+            existing.TagsJson = preset.TagsJson;
+            existing.IsQuickPreset = preset.IsQuickPreset;
+            existing.IsSystemPreset = true;
+            existing.UpdatedAt = DateTime.UtcNow;
+        }
+
         await dbContext.SaveChangesAsync();
     }
 }
