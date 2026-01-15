@@ -183,7 +183,7 @@ public class IndexModel(
                 // Pay.js tokenization is a client-side flow and should never be proxied
                 // as REST/SOAP from this page.
                 ModelState.AddModelError(string.Empty,
-                    "PayJsFlow is a client-side tokenization flow and cannot be executed from Manual Requests. Use the Pay.js Playground page.");
+                    "PayJsFlow is a client-side tokenization flow and cannot be executed from Manual Requests. Use the Pay.js page.");
                 return Page();
 
             default:
