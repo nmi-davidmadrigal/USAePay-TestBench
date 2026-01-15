@@ -96,7 +96,7 @@ public sealed class ScenarioRunService(
                 Method = RenderTemplate(preset.RestMethod ?? "POST", variables),
                 PathOrUrl = RenderTemplate(preset.RestPathOrEndpoint ?? string.Empty, variables),
                 Headers = RenderHeaders(DeserializeHeaders(preset.HeadersJson), variables),
-                Body = RenderTemplate(preset.BodyTemplate, variables),
+                Body = RenderTemplateOrNull(preset.BodyTemplate, variables),
                 PresetId = preset.Id,
                 TicketNumber = ticketNumber,
                 ConfirmProduction = confirmProduction
@@ -110,7 +110,7 @@ public sealed class ScenarioRunService(
         {
             Environment = preset.Environment,
             SoapAction = RenderTemplate(preset.SoapAction ?? string.Empty, variables),
-            EndpointUrl = RenderTemplate(preset.RestPathOrEndpoint, variables),
+            EndpointUrl = RenderTemplateOrNull(preset.RestPathOrEndpoint, variables),
             Headers = RenderHeaders(DeserializeHeaders(preset.HeadersJson), variables),
             Body = RenderTemplate(preset.BodyTemplate ?? string.Empty, variables),
             PresetId = preset.Id,
@@ -181,13 +181,8 @@ public sealed class ScenarioRunService(
         return variables;
     }
 
-    private static string? RenderTemplate(string? template, Dictionary<string, string> variables)
+    private static string RenderTemplate(string template, Dictionary<string, string> variables)
     {
-        if (template is null)
-        {
-            return null;
-        }
-
         var missing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (Match match in TemplateVariableRegex.Matches(template))
         {
@@ -207,6 +202,11 @@ public sealed class ScenarioRunService(
         return TemplateVariableRegex.Replace(template, m => variables[m.Groups["name"].Value]);
     }
 
+    private static string? RenderTemplateOrNull(string? template, Dictionary<string, string> variables)
+    {
+        return template is null ? null : RenderTemplate(template, variables);
+    }
+
     private static Dictionary<string, string>? RenderHeaders(Dictionary<string, string>? headers, Dictionary<string, string> variables)
     {
         if (headers is null)
@@ -217,7 +217,7 @@ public sealed class ScenarioRunService(
         var rendered = new Dictionary<string, string>(headers.Count, StringComparer.OrdinalIgnoreCase);
         foreach (var kvp in headers)
         {
-            rendered[kvp.Key] = RenderTemplate(kvp.Value, variables) ?? string.Empty;
+            rendered[kvp.Key] = RenderTemplate(kvp.Value ?? string.Empty, variables);
         }
 
         return rendered;
