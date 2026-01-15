@@ -28,12 +28,54 @@
 @if (!ModelState.IsValid)
 {
     <div class="warning">
-        @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+        @foreach (var kvp in ViewData.ModelState)
         {
-            <div>@error.ErrorMessage</div>
+            var key = string.IsNullOrWhiteSpace(kvp.Key) ? "(general)" : kvp.Key;
+            foreach (var error in kvp.Value.Errors)
+            {
+                <div><strong>@key</strong>: @error.ErrorMessage</div>
+            }
         }
     </div>
 }
+
+@if (!string.IsNullOrWhiteSpace(Model.CredentialStatus))
+{
+    <div class="panel">
+        <strong>@Model.CredentialStatus</strong>
+    </div>
+}
+
+<div class="panel">
+    <h2>REST Authentication (API Hash)</h2>
+    <p>
+        The app will automatically add USAePay REST <code>Authorization: Basic</code> using the API-hash scheme
+        (<code>s2/seed/sha256(sourceKey + seed + pin)</code>) when credentials are present and no Authorization header is supplied.
+        Credentials saved here are stored in your current session only.
+    </p>
+
+    <form method="post" asp-page-handler="SetCredentials">
+        <div class="form-row">
+            <div>
+                <label>Environment</label>
+                <select asp-for="CredentialEnvironment" asp-items="Html.GetEnumSelectList<EnvironmentType>()"></select>
+            </div>
+            <div>
+                <label>Source Key</label>
+                <input asp-for="SourceKey" autocomplete="off" />
+            </div>
+            <div>
+                <label>PIN</label>
+                <input asp-for="Pin" type="password" autocomplete="off" />
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <button type="submit" name="action" value="save">Save</button>
+                <button type="submit" name="action" value="clear" class="secondary">Clear</button>
+            </div>
+        </div>
+    </form>
+</div>
 
 <div class="panel">
     <h2>Preset Library</h2>
@@ -63,8 +105,9 @@
                     <td>@preset.TagsJson</td>
                     <td>
                         <form method="post" asp-page-handler="Run" asp-route-id="@preset.Id">
+                            <input type="hidden" name="id" value="@preset.Id" />
                             <input type="hidden" name="TicketNumber" value="@Model.TicketNumber" />
-                            <input type="hidden" name="ConfirmProduction" value="@Model.ConfirmProduction" />
+                            <input type="hidden" name="ConfirmProduction" value="@(Model.ConfirmProduction ? "true" : "false")" />
                             <button type="submit">Run</button>
                         </form>
                     </td>

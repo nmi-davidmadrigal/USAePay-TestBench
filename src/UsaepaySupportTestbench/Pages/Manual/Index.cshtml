@@ -103,7 +103,7 @@
     <h2>Pay.js Token Helper</h2>
     @if (string.IsNullOrWhiteSpace(Model.LastToken))
     {
-        <p>No Pay.js token captured yet. Visit the Pay.js Playground.</p>
+        <p>No Pay.js token captured yet. Visit <a asp-page="/PayJs/Index">Pay.js</a>.</p>
     }
     else
     {

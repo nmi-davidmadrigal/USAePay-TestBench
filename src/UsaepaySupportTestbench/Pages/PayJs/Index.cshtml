@@ -1,59 +1,259 @@
 @page
 @model UsaepaySupportTestbench.Pages.PayJs.IndexModel
 @{
-    ViewData["Title"] = "Pay.js Playground";
+    ViewData["Title"] = "Pay.js";
 }
 
-<h1>Pay.js Playground</h1>
+<h1>Pay.js</h1>
 
 <div class="panel">
-    <p>This page hosts Pay.js fields in the browser. Configure Pay.js keys in user-secrets.</p>
-    <div id="payjs-card"></div>
-    <button type="button" onclick="tokenize()">Tokenize</button>
+    <h2>Configuration</h2>
+    <p>
+        Enter your Pay.js <strong>Public Key</strong>. Card data is entered into a secure Pay.js iFrame; this app never receives raw PAN/CVV.
+    </p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div><strong>@Model.StatusMessage</strong></div>
+    }
+
+    @if (!ModelState.IsValid)
+    {
+        <div class="warning">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@error.ErrorMessage</div>
+            }
+        </div>
+    }
+
+    <form method="post">
+        <div class="form-row">
+            <div>
+                <label>Environment</label>
+                <select asp-for="Environment" asp-items="Html.GetEnumSelectList<EnvironmentType>()"></select>
+            </div>
+            <div>
+                <label>Public Key</label>
+                <input asp-for="PublicKey" autocomplete="off" />
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <button type="submit" asp-page-handler="SaveConfig">Save</button>
+                <button type="submit" asp-page-handler="ClearConfig" class="secondary">Clear Config</button>
+                <button type="submit" asp-page-handler="ClearToken" class="secondary">Clear Token</button>
+            </div>
+        </div>
+    </form>
 </div>
 
 <div class="panel">
-    <h2>Last Token</h2>
-    @if (string.IsNullOrWhiteSpace(Model.LastToken))
-    {
-        <p>No token captured yet.</p>
-    }
-    else
-    {
-        <p><strong>Token:</strong> @Model.LastToken</p>
-        @if (!string.IsNullOrWhiteSpace(Model.LastPaymentKey))
-        {
-            <p><strong>Payment Key:</strong> @Model.LastPaymentKey</p>
-        }
-    }
+    <h2>Card Entry</h2>
+    <p>
+        Click <strong>Initialize</strong> to render card fields, then <strong>Create Token</strong> to get a payment token (payment key).
+        The token will be displayed below and saved to this session for use in Manual Requests.
+    </p>
+
+    <div class="form-row">
+        <div>
+            <button type="button" id="btnInitPayJs">Initialize</button>
+            <button type="button" id="btnTokenize" class="secondary">Create Token</button>
+        </div>
+    </div>
+
+    <label for="paymentCardContainer">Credit/Debit Card</label>
+    <div id="paymentCardContainer" class="payjs-field"></div>
+    <div id="paymentCardErrorContainer" role="alert" class="payjs-error" style="display:none;"></div>
 </div>
 
 @section RightRail {
     <div class="panel">
-        <h3>Diagnostics</h3>
-        <p>Pay.js is client-side only. Tokens are stored in session for request builders.</p>
+        <h3>Token</h3>
+        <p>Copy this token and use it in REST/SOAP requests as needed.</p>
+
+        <label>Current Token (this session)</label>
+        <input type="text" id="txtSessionToken" readonly value="@(Model.LastPaymentKey ?? Model.LastToken ?? string.Empty)" />
+        <div style="margin-top:8px;">
+            <button type="button" id="btnCopyToken" class="secondary">Copy</button>
+        </div>
+
+        <div style="margin-top:12px;">
+            <strong>Note:</strong> Pay.js returns a <em>payment key</em>. This app stores it in-session.
+        </div>
     </div>
 }
 
-<script src="https://sandbox.usaepay.com/js/pay.js"></script>
 <script>
-    // TODO: Replace with real Pay.js configuration from user-secrets.
-    const payjsConfig = {
-        key: 'sandbox-public-key',
-        container: '#payjs-card'
-    };
+    // Pay.js v1 docs:
+    // https://help.usaepay.info/developer/payjs-v1/
+    // Uses: new usaepay.Client(publicKey) + client.createPaymentCardEntry() + client.getPaymentKey(entry)
 
-    function tokenize() {
-        // TODO: Replace with Pay.js tokenization callbacks.
-        const payload = {
-            token: 'stub-token-' + Date.now(),
-            paymentKey: 'stub-payment-key'
-        };
+    const envSelect = document.getElementById('Environment');
+    const publicKeyInput = document.getElementById('PublicKey');
+    const errorContainer = document.getElementById('paymentCardErrorContainer');
+    const cardContainer = document.getElementById('paymentCardContainer');
 
-        fetch('/api/payjs/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(() => window.location.reload());
+    function getSessionTokenInput() {
+        // Note: the right-rail is rendered after main content in the layout,
+        // so this element may not exist when this script first executes.
+        return document.getElementById('txtSessionToken');
     }
+
+    let client = null;
+    let paymentCard = null;
+
+    function showError(message) {
+        if (!message || !String(message).trim()) {
+            // Pay.js sometimes emits "error" events with an empty payload while users
+            // focus between fields; treat those as "clear error".
+            clearError();
+            return;
+        }
+
+        errorContainer.style.display = 'block';
+        errorContainer.textContent = message;
+    }
+
+    function clearError() {
+        errorContainer.style.display = 'none';
+        errorContainer.textContent = '';
+    }
+
+    function getPayJsScriptUrl() {
+        // Docs show https://www.usaepay.com/js/v1/pay.js
+        // Sandbox environments commonly serve Pay.js from sandbox.usaepay.com as well.
+        const env = (envSelect?.value || 'Sandbox').toLowerCase();
+        if (env === 'production') {
+            return 'https://www.usaepay.com/js/v1/pay.js';
+        }
+        return 'https://sandbox.usaepay.com/js/v1/pay.js';
+    }
+
+    function loadPayJs() {
+        return new Promise((resolve, reject) => {
+            if (window.usaepay && window.usaepay.Client) {
+                resolve();
+                return;
+            }
+
+            const existing = document.getElementById('usaepay-payjs-v1');
+            if (existing) {
+                existing.remove();
+            }
+
+            const script = document.createElement('script');
+            script.id = 'usaepay-payjs-v1';
+            script.src = getPayJsScriptUrl();
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load Pay.js script.'));
+            document.head.appendChild(script);
+        });
+    }
+
+    async function initializePayJs() {
+        clearError();
+        const publicKey = (publicKeyInput.value || '').trim();
+        if (!publicKey) {
+            showError('Enter your Pay.js Public Key above, then click Initialize.');
+            return;
+        }
+
+        try {
+            await loadPayJs();
+        } catch (e) {
+            showError(e && e.message ? e.message : 'Failed to load Pay.js.');
+            return;
+        }
+
+        if (!window.usaepay || !window.usaepay.Client) {
+            showError('Pay.js loaded but usaepay.Client is not available.');
+            return;
+        }
+
+        try {
+            client = new window.usaepay.Client(publicKey);
+            paymentCard = client.createPaymentCardEntry();
+
+            // Clear existing iframe content before re-render.
+            cardContainer.innerHTML = '';
+
+            const style = {
+                // Optional: customize Pay.js field styling.
+            };
+
+            paymentCard.generateHTML(style);
+            paymentCard.addHTML('paymentCardContainer');
+
+            paymentCard.addEventListener('error', errorMessage => {
+                showError(errorMessage);
+            });
+        } catch (e) {
+            showError(e && e.message ? e.message : 'Failed to initialize Pay.js.');
+        }
+    }
+
+    function normalizePaymentKey(result) {
+        if (!result) return null;
+        if (typeof result === 'string') return result;
+        if (result.paymentKey) return result.paymentKey;
+        if (result.payment_key) return result.payment_key;
+        if (result.key) return result.key;
+        return null;
+    }
+
+    async function createToken() {
+        clearError();
+        if (!client || !paymentCard) {
+            await initializePayJs();
+            if (!client || !paymentCard) return;
+        }
+
+        try {
+            const result = await client.getPaymentKey(paymentCard);
+            if (result && result.error) {
+                showError(result.error.message || 'Pay.js returned an error.');
+                return;
+            }
+
+            const paymentKey = normalizePaymentKey(result);
+            if (!paymentKey) {
+                showError('Pay.js did not return a token in a recognized format.');
+                return;
+            }
+
+            // Display for copy.
+            const tokenInput = getSessionTokenInput();
+            if (tokenInput) {
+                tokenInput.value = paymentKey;
+            }
+
+            // Save to server-side session (so Manual Requests can reference it).
+            await fetch('/api/payjs/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: paymentKey, paymentKey: paymentKey })
+            });
+        } catch (e) {
+            showError(e && e.message ? e.message : 'Tokenization failed.');
+        }
+    }
+
+    document.getElementById('btnInitPayJs').addEventListener('click', initializePayJs);
+    document.getElementById('btnTokenize').addEventListener('click', createToken);
+    document.getElementById('btnCopyToken').addEventListener('click', async () => {
+        const tokenInput = getSessionTokenInput();
+        const val = (tokenInput && tokenInput.value) ? tokenInput.value : '';
+        if (!val) return;
+        try {
+            await navigator.clipboard.writeText(val);
+        } catch {
+            // Fallback
+            if (tokenInput) {
+                tokenInput.focus();
+                tokenInput.select();
+                document.execCommand('copy');
+            }
+        }
+    });
 </script>

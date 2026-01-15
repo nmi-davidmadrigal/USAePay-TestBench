@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using UsaepaySupportTestbench.Data;
 using UsaepaySupportTestbench.Models;
@@ -9,8 +11,12 @@ public sealed class ScenarioRunService(
     ApplicationDbContext dbContext,
     RestProxyService restProxyService,
     SoapProxyService soapProxyService,
-    RedactionService redactionService)
+    RedactionService redactionService,
+    IHttpContextAccessor httpContextAccessor)
 {
+    private static readonly Regex TemplateVariableRegex = new(@"\{\{(?<name>[a-zA-Z0-9_:-]+)\}\}",
+        RegexOptions.Compiled);
+
     public async Task<List<ScenarioRun>> GetRecentRunsAsync(int take = 15)
     {
         return await dbContext.ScenarioRuns
@@ -82,15 +88,17 @@ public sealed class ScenarioRunService(
             throw new InvalidOperationException("Pay.js presets are client-side only.");
         }
 
+        var variables = DeserializeVariables(preset.VariablesJson, httpContextAccessor.HttpContext?.Session);
+
         if (preset.ApiType == ApiType.Rest)
         {
             var request = new ProxyRestRequest
             {
                 Environment = preset.Environment,
-                Method = preset.RestMethod ?? "POST",
-                PathOrUrl = preset.RestPathOrEndpoint ?? string.Empty,
-                Headers = DeserializeHeaders(preset.HeadersJson),
-                Body = preset.BodyTemplate,
+                Method = RenderTemplate(preset.RestMethod ?? "POST", variables),
+                PathOrUrl = RenderTemplate(preset.RestPathOrEndpoint ?? string.Empty, variables),
+                Headers = RenderHeaders(DeserializeHeaders(preset.HeadersJson), variables),
+                Body = RenderTemplateOrNull(preset.BodyTemplate, variables),
                 PresetId = preset.Id,
                 TicketNumber = ticketNumber,
                 ConfirmProduction = confirmProduction
@@ -103,10 +111,10 @@ public sealed class ScenarioRunService(
         var soapRequest = new ProxySoapRequest
         {
             Environment = preset.Environment,
-            SoapAction = preset.SoapAction ?? string.Empty,
-            EndpointUrl = preset.RestPathOrEndpoint,
-            Headers = DeserializeHeaders(preset.HeadersJson),
-            Body = preset.BodyTemplate ?? string.Empty,
+            SoapAction = RenderTemplate(preset.SoapAction ?? string.Empty, variables),
+            EndpointUrl = RenderTemplateOrNull(preset.RestPathOrEndpoint, variables),
+            Headers = RenderHeaders(DeserializeHeaders(preset.HeadersJson), variables),
+            Body = RenderTemplate(preset.BodyTemplate ?? string.Empty, variables),
             PresetId = preset.Id,
             TicketNumber = ticketNumber,
             ConfirmProduction = confirmProduction
@@ -146,6 +154,91 @@ public sealed class ScenarioRunService(
         }
 
         return JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson, JsonSerializerOptions());
+    }
+
+    private static Dictionary<string, string> DeserializeVariables(string? variablesJson, ISession? session)
+    {
+        var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrWhiteSpace(variablesJson))
+        {
+            var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(variablesJson, JsonSerializerOptions());
+            if (parsed is not null)
+            {
+                foreach (var kvp in parsed)
+                {
+                    if (!string.IsNullOrWhiteSpace(kvp.Key))
+                    {
+                        variables[kvp.Key] = kvp.Value ?? string.Empty;
+                    }
+                }
+            }
+        }
+
+        // Built-ins
+        variables.TryAdd("timestamp", DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
+        variables.TryAdd("timestampIso", DateTime.UtcNow.ToString("O"));
+        variables.TryAdd("guid", Guid.NewGuid().ToString("D"));
+
+        // Session variables (Pay.js)
+        // Pay.js v1 returns a payment key; we store it in both keys for convenience.
+        if (session is not null)
+        {
+            var payjsToken = session.GetString("PayJs:Token") ?? string.Empty;
+            var payjsPaymentKey = session.GetString("PayJs:PaymentKey") ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(payjsToken))
+            {
+                variables.TryAdd("payjsToken", payjsToken);
+            }
+            if (!string.IsNullOrWhiteSpace(payjsPaymentKey))
+            {
+                variables.TryAdd("payjsPaymentKey", payjsPaymentKey);
+            }
+        }
+
+        return variables;
+    }
+
+    private static string RenderTemplate(string template, Dictionary<string, string> variables)
+    {
+        var missing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (Match match in TemplateVariableRegex.Matches(template))
+        {
+            var name = match.Groups["name"].Value;
+            if (!variables.ContainsKey(name))
+            {
+                missing.Add(name);
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Preset template is missing variable values for: {string.Join(", ", missing.OrderBy(x => x))}");
+        }
+
+        return TemplateVariableRegex.Replace(template, m => variables[m.Groups["name"].Value]);
+    }
+
+    private static string? RenderTemplateOrNull(string? template, Dictionary<string, string> variables)
+    {
+        return template is null ? null : RenderTemplate(template, variables);
+    }
+
+    private static Dictionary<string, string>? RenderHeaders(Dictionary<string, string>? headers, Dictionary<string, string> variables)
+    {
+        if (headers is null)
+        {
+            return null;
+        }
+
+        var rendered = new Dictionary<string, string>(headers.Count, StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in headers)
+        {
+            rendered[kvp.Key] = RenderTemplate(kvp.Value ?? string.Empty, variables);
+        }
+
+        return rendered;
     }
 
     private static JsonSerializerOptions JsonSerializerOptions()
