@@ -40,16 +40,16 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
         Presets = await presetService.SearchAsync(SearchTerm, FilterApiType);
     }
 
-    public async Task<IActionResult> OnPostRunAsync(Guid? id, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostRunAsync(string? id, CancellationToken cancellationToken)
     {
-        if (!id.HasValue || id.Value == Guid.Empty)
+        if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out var presetId) || presetId == Guid.Empty)
         {
-            ModelState.AddModelError(string.Empty, "Missing preset id. Refresh the page and try again.");
+            ModelState.AddModelError(string.Empty, "Missing/invalid preset id. Refresh the page and try again.");
             await OnGetAsync();
             return Page();
         }
 
-        var preset = await presetService.GetAsync(id.Value);
+        var preset = await presetService.GetAsync(presetId);
         if (preset is null)
         {
             return NotFound();

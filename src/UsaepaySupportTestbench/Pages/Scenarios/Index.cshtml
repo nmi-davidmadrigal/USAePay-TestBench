@@ -28,9 +28,13 @@
 @if (!ModelState.IsValid)
 {
     <div class="warning">
-        @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+        @foreach (var kvp in ViewData.ModelState)
         {
-            <div>@error.ErrorMessage</div>
+            var key = string.IsNullOrWhiteSpace(kvp.Key) ? "(general)" : kvp.Key;
+            foreach (var error in kvp.Value.Errors)
+            {
+                <div><strong>@key</strong>: @error.ErrorMessage</div>
+            }
         }
     </div>
 }
