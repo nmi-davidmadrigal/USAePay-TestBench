@@ -42,3 +42,7 @@ Built-in variables:
 - `{{timestamp}}`: UTC `yyyyMMddHHmmss`
 - `{{timestampIso}}`: UTC ISO-8601
 - `{{guid}}`: random GUID
+
+Session variables (when available):
+- `{{payjsToken}}`: the last Pay.js token stored in-session (`PayJs:Token`)
+- `{{payjsPaymentKey}}`: the last Pay.js payment key stored in-session (`PayJs:PaymentKey`)

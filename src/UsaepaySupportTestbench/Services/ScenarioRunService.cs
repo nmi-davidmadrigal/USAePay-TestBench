@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using UsaepaySupportTestbench.Data;
 using UsaepaySupportTestbench.Models;
@@ -10,7 +11,8 @@ public sealed class ScenarioRunService(
     ApplicationDbContext dbContext,
     RestProxyService restProxyService,
     SoapProxyService soapProxyService,
-    RedactionService redactionService)
+    RedactionService redactionService,
+    IHttpContextAccessor httpContextAccessor)
 {
     private static readonly Regex TemplateVariableRegex = new(@"\{\{(?<name>[a-zA-Z0-9_:-]+)\}\}",
         RegexOptions.Compiled);
@@ -86,7 +88,7 @@ public sealed class ScenarioRunService(
             throw new InvalidOperationException("Pay.js presets are client-side only.");
         }
 
-        var variables = DeserializeVariables(preset.VariablesJson);
+        var variables = DeserializeVariables(preset.VariablesJson, httpContextAccessor.HttpContext?.Session);
 
         if (preset.ApiType == ApiType.Rest)
         {
@@ -154,7 +156,7 @@ public sealed class ScenarioRunService(
         return JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson, JsonSerializerOptions());
     }
 
-    private static Dictionary<string, string> DeserializeVariables(string? variablesJson)
+    private static Dictionary<string, string> DeserializeVariables(string? variablesJson, ISession? session)
     {
         var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -177,6 +179,22 @@ public sealed class ScenarioRunService(
         variables.TryAdd("timestamp", DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
         variables.TryAdd("timestampIso", DateTime.UtcNow.ToString("O"));
         variables.TryAdd("guid", Guid.NewGuid().ToString("D"));
+
+        // Session variables (Pay.js)
+        // Pay.js v1 returns a payment key; we store it in both keys for convenience.
+        if (session is not null)
+        {
+            var payjsToken = session.GetString("PayJs:Token") ?? string.Empty;
+            var payjsPaymentKey = session.GetString("PayJs:PaymentKey") ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(payjsToken))
+            {
+                variables.TryAdd("payjsToken", payjsToken);
+            }
+            if (!string.IsNullOrWhiteSpace(payjsPaymentKey))
+            {
+                variables.TryAdd("payjsPaymentKey", payjsPaymentKey);
+            }
+        }
 
         return variables;
     }
