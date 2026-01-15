@@ -130,6 +130,28 @@ button.secondary {
     background: #475569;
 }
 
+.payjs-field {
+    border: 1px solid #cbd5f5;
+    border-radius: 6px;
+    background: #f8fafc;
+    padding: 10px;
+    min-height: 64px;
+}
+
+.payjs-field:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.payjs-error {
+    margin-top: 10px;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #9f1239;
+    padding: 10px;
+    border-radius: 6px;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;

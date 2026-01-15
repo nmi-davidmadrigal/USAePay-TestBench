@@ -62,8 +62,8 @@
     </div>
 
     <label for="paymentCardContainer">Credit/Debit Card</label>
-    <div id="paymentCardContainer"></div>
-    <div id="paymentCardErrorContainer" role="alert" class="warning" style="display:none;"></div>
+    <div id="paymentCardContainer" class="payjs-field"></div>
+    <div id="paymentCardErrorContainer" role="alert" class="payjs-error" style="display:none;"></div>
 </div>
 
 @section RightRail {
@@ -103,8 +103,15 @@
     let paymentCard = null;
 
     function showError(message) {
+        if (!message || !String(message).trim()) {
+            // Pay.js sometimes emits "error" events with an empty payload while users
+            // focus between fields; treat those as "clear error".
+            clearError();
+            return;
+        }
+
         errorContainer.style.display = 'block';
-        errorContainer.textContent = message || 'Unknown Pay.js error.';
+        errorContainer.textContent = message;
     }
 
     function clearError() {
