@@ -34,3 +34,11 @@ dotnet user-secrets set "Usaepay:Production:Pin" "prod-pin" --project src/Usaepa
 - Manual request composer
 - Pay.js playground (stub config)
 - Redacted logging and export
+
+## Preset templating
+Preset fields support simple variable substitution using `{{varName}}` from `VariablesJson`.
+
+Built-in variables:
+- `{{timestamp}}`: UTC `yyyyMMddHHmmss`
+- `{{timestampIso}}`: UTC ISO-8601
+- `{{guid}}`: random GUID
