@@ -1,0 +1,36 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "https://sandbox.usaepay.com/soap/gate/15E7FB61/usaepay.wsdl"
+    ],
+    "collectionTypes": [
+      "System.Array",
+      "System.Collections.Generic.Dictionary`2"
+    ],
+    "namespaceMappings": [
+      "*, usaepay"
+    ],
+    "references": [
+      "Microsoft.Data.Sqlite, {Microsoft.Data.Sqlite.Core, 8.0.12}",
+      "Microsoft.EntityFrameworkCore, {Microsoft.EntityFrameworkCore, 8.0.12}",
+      "Microsoft.EntityFrameworkCore.Abstractions, {Microsoft.EntityFrameworkCore.Abstractions, 8.0.12}",
+      "Microsoft.EntityFrameworkCore.Relational, {Microsoft.EntityFrameworkCore.Relational, 8.0.12}",
+      "Microsoft.EntityFrameworkCore.Sqlite, {Microsoft.EntityFrameworkCore.Sqlite.Core, 8.0.12}",
+      "Microsoft.Extensions.Caching.Abstractions, {Microsoft.Extensions.Caching.Abstractions, 8.0.0}",
+      "Microsoft.Extensions.Caching.Memory, {Microsoft.Extensions.Caching.Memory, 8.0.1}",
+      "Microsoft.Extensions.Configuration.Abstractions, {Microsoft.Extensions.Configuration.Abstractions, 8.0.0}",
+      "Microsoft.Extensions.DependencyInjection, {Microsoft.Extensions.DependencyInjection, 8.0.1}",
+      "Microsoft.Extensions.DependencyInjection.Abstractions, {Microsoft.Extensions.DependencyInjection.Abstractions, 8.0.2}",
+      "Microsoft.Extensions.DependencyModel, {Microsoft.Extensions.DependencyModel, 8.0.2}",
+      "Microsoft.Extensions.Logging, {Microsoft.Extensions.Logging, 8.0.1}",
+      "Microsoft.Extensions.Logging.Abstractions, {Microsoft.Extensions.Logging.Abstractions, 8.0.2}",
+      "Microsoft.Extensions.Options, {Microsoft.Extensions.Options, 8.0.2}",
+      "Microsoft.Extensions.Primitives, {Microsoft.Extensions.Primitives, 8.0.0}",
+      "SQLitePCLRaw.batteries_v2, {SQLitePCLRaw.bundle_e_sqlite3, 2.1.6}",
+      "SQLitePCLRaw.core, {SQLitePCLRaw.core, 2.1.6}",
+      "SQLitePCLRaw.provider.e_sqlite3, {SQLitePCLRaw.provider.e_sqlite3, 2.1.6}"
+    ],
+    "targetFramework": "net8.0",
+    "typeReuseMode": "All"
+  }
+}
