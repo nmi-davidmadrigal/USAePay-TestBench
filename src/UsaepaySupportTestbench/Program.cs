@@ -13,6 +13,7 @@ builder.Services.AddHttpClient("UsaepayProxy");
 builder.Services.AddScoped<RedactionService>();
 builder.Services.AddScoped<RestProxyService>();
 builder.Services.AddScoped<SoapProxyService>();
+builder.Services.AddScoped<UsaepaySoapService>();
 builder.Services.AddScoped<PresetService>();
 builder.Services.AddScoped<ScenarioRunService>();
 

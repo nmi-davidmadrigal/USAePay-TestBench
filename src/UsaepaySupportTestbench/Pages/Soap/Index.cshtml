@@ -1,0 +1,226 @@
+@page
+@model UsaepaySupportTestbench.Pages.Soap.IndexModel
+@{
+    ViewData["Title"] = "SOAP API";
+}
+
+<h1>SOAP API</h1>
+
+<p>Typed SOAP client integration using the USAePay C# Getting Started steps (proxy step skipped).</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="panel">
+        @Model.StatusMessage
+    </div>
+}
+
+@if (Model.Environment == EnvironmentType.Production)
+{
+    <div class="warning">
+        Production environment selected. Confirm before sending.
+    </div>
+}
+
+@if (!ModelState.IsValid)
+{
+    <div class="warning">
+        @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+<div class="panel">
+    <h2>Getting Started Summary</h2>
+    <ol>
+        <li>Web reference already added (usaepay).</li>
+        <li>Client instantiated per request.</li>
+        <li>Proxy support skipped.</li>
+        <li>Security token built with MD5 hash (SourceKey + seed + PIN).</li>
+        <li>SOAP methods invoked via typed client.</li>
+    </ol>
+    <p>Docs: <a href="https://help.usaepay.info/api/soap/#c-sharp" target="_blank" rel="noreferrer">USAePay SOAP C# Getting Started</a></p>
+</div>
+
+<form method="post" asp-page-handler="Execute">
+    <div class="panel">
+        <h2>Credentials &amp; Environment</h2>
+        <div class="form-row">
+            <div>
+                <label>Environment</label>
+                <select asp-for="Environment" asp-items="Html.GetEnumSelectList<EnvironmentType>()"></select>
+            </div>
+            <div>
+                <label>Confirm Production</label>
+                <select asp-for="ConfirmProduction">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+            <div>
+                <label>Remember Credentials</label>
+                <select asp-for="RememberCredentials">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label>Source Key</label>
+                <input asp-for="SourceKey" />
+            </div>
+            <div>
+                <label>PIN</label>
+                <input asp-for="Pin" type="password" />
+            </div>
+            <div>
+                <label>Client IP (optional)</label>
+                <input asp-for="ClientIp" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label>SOAP Endpoint Override</label>
+                <input asp-for="EndpointUrl" placeholder="https://sandbox.usaepay.com/soap/gate/XXXX" />
+            </div>
+            <div>
+                <label>Ticket Number (optional)</label>
+                <input asp-for="TicketNumber" />
+            </div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.CredentialHint))
+        {
+            <div>@Model.CredentialHint</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.EndpointHint))
+        {
+            <div>@Model.EndpointHint</div>
+        }
+    </div>
+
+    <div class="panel">
+        <h2>Operation</h2>
+        <div class="form-row">
+            <div>
+                <label>Operation</label>
+                <select asp-for="Operation" asp-items="Html.GetEnumSelectList<SoapOperationType>()"></select>
+            </div>
+            <div>
+                <label>RefNum (for Quick Sale, Void, Refund)</label>
+                <input asp-for="RefNum" />
+            </div>
+            <div>
+                <label>Amount</label>
+                <input asp-for="Amount" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label>Quick Sale Auth Only</label>
+                <select asp-for="AuthOnly">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+            <div>
+                <label>Invoice</label>
+                <input asp-for="Invoice" />
+            </div>
+            <div>
+                <label>Description</label>
+                <input asp-for="Description" />
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Card Details (runSale, runAuthOnly, runCredit)</h2>
+        <div class="form-row">
+            <div>
+                <label>Cardholder</label>
+                <input asp-for="Cardholder" />
+            </div>
+            <div>
+                <label>Card Number</label>
+                <input asp-for="CardNumber" />
+            </div>
+            <div>
+                <label>Card Expiration (MMYY)</label>
+                <input asp-for="CardExpiration" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label>Card Code</label>
+                <input asp-for="CardCode" />
+            </div>
+            <div>
+                <label>AVS Street</label>
+                <input asp-for="AvsStreet" />
+            </div>
+            <div>
+                <label>AVS Zip</label>
+                <input asp-for="AvsZip" />
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Check Details (runCheckSale)</h2>
+        <div class="form-row">
+            <div>
+                <label>Routing Number</label>
+                <input asp-for="CheckRouting" />
+            </div>
+            <div>
+                <label>Account Number</label>
+                <input asp-for="CheckAccount" />
+            </div>
+            <div>
+                <label>Account Type</label>
+                <input asp-for="CheckAccountType" placeholder="checking" />
+            </div>
+            <div>
+                <label>Check Number</label>
+                <input asp-for="CheckNumber" />
+            </div>
+        </div>
+    </div>
+
+    <button type="submit">Run Operation</button>
+</form>
+
+<form method="post" asp-page-handler="ClearCredentials">
+    <button type="submit" class="secondary">Clear Saved Credentials</button>
+</form>
+
+@section RightRail {
+    <div class="panel">
+        <h3>Result</h3>
+        @if (Model.OperationResult is null)
+        {
+            <p>No response yet.</p>
+        }
+        else
+        {
+            <div><strong>Status:</strong> @(Model.OperationResult.Success ? "Success" : "Failed")</div>
+            <div><strong>Latency:</strong> @Model.OperationResult.LatencyMs ms</div>
+            @if (!string.IsNullOrWhiteSpace(Model.OperationResult.EndpointUrl))
+            {
+                <div><strong>Endpoint:</strong> @Model.OperationResult.EndpointUrl</div>
+            }
+            @if (!Model.OperationResult.Success && !string.IsNullOrWhiteSpace(Model.OperationResult.ErrorMessage))
+            {
+                <div class="warning">@Model.OperationResult.ErrorMessage</div>
+            }
+            <textarea readonly>@Model.RedactedResponse</textarea>
+        }
+    </div>
+    <div class="panel">
+        <h3>Request (Redacted)</h3>
+        <textarea readonly>@Model.RedactedRequest</textarea>
+    </div>
+}
