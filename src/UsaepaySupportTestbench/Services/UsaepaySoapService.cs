@@ -18,7 +18,7 @@ public sealed class UsaepaySoapService(
     public async Task<SoapOperationResult> ExecuteAsync(SoapTransactionInput input, CancellationToken cancellationToken)
     {
         var session = httpContextAccessor.HttpContext?.Session;
-        var endpoint = ResolveEndpoint(input.Environment, input.EndpointUrl, session);
+        var endpoint = ResolveEndpoint(input.Environment, input.EndpointUrl, input.SoftwareKey, session);
         var (sourceKey, pin) = ResolveCredentials(input.Environment, input.SourceKey, input.Pin, session);
         if (string.IsNullOrWhiteSpace(sourceKey) || string.IsNullOrWhiteSpace(pin))
         {
@@ -111,18 +111,24 @@ public sealed class UsaepaySoapService(
         return new ueSoapServerPortTypeClient(binding, new EndpointAddress(endpointUrl));
     }
 
-    private string ResolveEndpoint(EnvironmentType environment, string? endpointOverride, ISession? session)
+    private string ResolveEndpoint(
+        EnvironmentType environment,
+        string? endpointOverride,
+        string? softwareKeyOverride,
+        ISession? session)
     {
         if (!string.IsNullOrWhiteSpace(endpointOverride))
         {
-            return NormalizeEndpoint(endpointOverride);
+            var endpoint = NormalizeEndpoint(endpointOverride);
+            return ApplySoftwareKeyIfNeeded(endpoint, ResolveSoftwareKey(environment, softwareKeyOverride, session));
         }
 
         var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
         var sessionEndpoint = session?.GetString($"{prefix}:SoapEndpoint");
         if (!string.IsNullOrWhiteSpace(sessionEndpoint))
         {
-            return NormalizeEndpoint(sessionEndpoint);
+            var endpoint = NormalizeEndpoint(sessionEndpoint);
+            return ApplySoftwareKeyIfNeeded(endpoint, ResolveSoftwareKey(environment, softwareKeyOverride, session));
         }
 
         var envOptions = environment == EnvironmentType.Production
@@ -134,7 +140,29 @@ public sealed class UsaepaySoapService(
             throw new InvalidOperationException($"SOAP endpoint not configured for {environment}.");
         }
 
-        return NormalizeEndpoint(envOptions.SoapEndpoint);
+        var resolvedEndpoint = NormalizeEndpoint(envOptions.SoapEndpoint);
+        var softwareKey = ResolveSoftwareKey(environment, softwareKeyOverride, session);
+        return ApplySoftwareKeyIfNeeded(resolvedEndpoint, softwareKey);
+    }
+
+    private string? ResolveSoftwareKey(EnvironmentType environment, string? overrideKey, ISession? session)
+    {
+        if (!string.IsNullOrWhiteSpace(overrideKey))
+        {
+            return overrideKey.Trim();
+        }
+
+        var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        var sessionKey = session?.GetString($"{prefix}:SoapSoftwareKey");
+        if (!string.IsNullOrWhiteSpace(sessionKey))
+        {
+            return sessionKey.Trim();
+        }
+
+        var envOptions = environment == EnvironmentType.Production
+            ? options.Value.Production
+            : options.Value.Sandbox;
+        return envOptions.SoapSoftwareKey;
     }
 
     private (string? SourceKey, string? Pin) ResolveCredentials(
@@ -303,5 +331,22 @@ public sealed class UsaepaySoapService(
         }
 
         return trimmed.TrimEnd('/');
+    }
+
+    private static string ApplySoftwareKeyIfNeeded(string endpoint, string? softwareKey)
+    {
+        var normalized = endpoint.TrimEnd('/');
+        if (!normalized.EndsWith("/soap/gate", StringComparison.OrdinalIgnoreCase))
+        {
+            return endpoint;
+        }
+
+        if (string.IsNullOrWhiteSpace(softwareKey))
+        {
+            throw new InvalidOperationException(
+                "SOAP endpoint requires a software key. Supply the key from your WSDL URL or add Usaepay:SoapSoftwareKey.");
+        }
+
+        return $"{normalized}/{softwareKey.Trim()}";
     }
 }

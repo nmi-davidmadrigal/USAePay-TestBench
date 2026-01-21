@@ -17,6 +17,7 @@ public sealed class SoapTransactionInput
     public SoapOperationType Operation { get; set; } = SoapOperationType.RunSale;
 
     public string? EndpointUrl { get; set; }
+    public string? SoftwareKey { get; set; }
     public string? SourceKey { get; set; }
     public string? Pin { get; set; }
     public string? ClientIp { get; set; }

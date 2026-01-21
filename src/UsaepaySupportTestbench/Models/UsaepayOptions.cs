@@ -10,6 +10,7 @@ public sealed class UsaepayEnvironmentOptions
 {
     public string RestBaseUrl { get; set; } = string.Empty;
     public string SoapEndpoint { get; set; } = string.Empty;
+    public string? SoapSoftwareKey { get; set; }
     /// <summary>
     /// USAePay "Source Key" (aka API key) for REST Basic auth.
     /// </summary>

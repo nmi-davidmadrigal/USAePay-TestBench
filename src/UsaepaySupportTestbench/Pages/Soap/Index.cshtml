@@ -6,8 +6,6 @@
 
 <h1>SOAP API</h1>
 
-<p>Typed SOAP client integration using the USAePay C# Getting Started steps (proxy step skipped).</p>
-
 @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
 {
     <div class="panel">
@@ -31,18 +29,6 @@
         }
     </div>
 }
-
-<div class="panel">
-    <h2>Getting Started Summary</h2>
-    <ol>
-        <li>Web reference already added (usaepay).</li>
-        <li>Client instantiated per request.</li>
-        <li>Proxy support skipped.</li>
-        <li>Security token built with MD5 hash (SourceKey + seed + PIN).</li>
-        <li>SOAP methods invoked via typed client.</li>
-    </ol>
-    <p>Docs: <a href="https://help.usaepay.info/api/soap/#c-sharp" target="_blank" rel="noreferrer">USAePay SOAP C# Getting Started</a></p>
-</div>
 
 <form method="post" asp-page-handler="Execute">
     <div class="panel">
@@ -76,6 +62,12 @@
                 <label>PIN</label>
                 <input asp-for="Pin" type="password" />
             </div>
+            <div>
+                <label>Software Key</label>
+                <input asp-for="SoftwareKey" placeholder="From your WSDL URL" />
+            </div>
+        </div>
+        <div class="form-row">
             <div>
                 <label>Client IP (optional)</label>
                 <input asp-for="ClientIp" />
