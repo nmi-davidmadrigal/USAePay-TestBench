@@ -46,9 +46,6 @@ public class IndexModel(
     [BindProperty]
     public string? TicketNumber { get; set; }
 
-    [BindProperty]
-    public bool ConfirmProduction { get; set; }
-
     public ProxyResponse? Response { get; private set; }
 
     public string? RedactedRequest { get; private set; }
@@ -69,11 +66,6 @@ public class IndexModel(
     {
         LastToken = HttpContext.Session.GetString("PayJs:Token");
         LastPaymentKey = HttpContext.Session.GetString("PayJs:PaymentKey");
-
-        if (Environment == EnvironmentType.Production && !ConfirmProduction)
-        {
-            ModelState.AddModelError(string.Empty, "Production requests require explicit confirmation.");
-        }
 
         Dictionary<string, string>? headers = null;
         if (!string.IsNullOrWhiteSpace(HeadersJson))
@@ -104,8 +96,7 @@ public class IndexModel(
                     PathOrUrl = PathOrUrl,
                     Headers = headers,
                     Body = Body,
-                    TicketNumber = TicketNumber,
-                    ConfirmProduction = ConfirmProduction
+                    TicketNumber = TicketNumber
                 };
 
                 Response = await restProxyService.ExecuteAsync(request, cancellationToken);
@@ -146,8 +137,7 @@ public class IndexModel(
                     EndpointUrl = EndpointUrl,
                     Headers = headers,
                     Body = Body,
-                    TicketNumber = TicketNumber,
-                    ConfirmProduction = ConfirmProduction
+                    TicketNumber = TicketNumber
                 };
 
                 Response = await soapProxyService.ExecuteAsync(request, cancellationToken);

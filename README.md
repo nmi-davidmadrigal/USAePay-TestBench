@@ -22,8 +22,6 @@ Edit `appsettings.json` for base URLs. Store credentials in user-secrets:
 ```bash
 dotnet user-secrets set "Usaepay:Sandbox:SourceKey" "sandbox-source-key" --project src/UsaepaySupportTestbench
 dotnet user-secrets set "Usaepay:Sandbox:Pin" "sandbox-pin" --project src/UsaepaySupportTestbench
-dotnet user-secrets set "Usaepay:Production:SourceKey" "prod-source-key" --project src/UsaepaySupportTestbench
-dotnet user-secrets set "Usaepay:Production:Pin" "prod-pin" --project src/UsaepaySupportTestbench
 ```
 
 > Note: You can also enter Source Key + PIN from the Scenarios page; credentials entered there are stored in-session only.

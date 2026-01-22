@@ -6,13 +6,6 @@
 
 <h1>Preset Builder</h1>
 
-@if (Model.Preset.Environment == EnvironmentType.Production)
-{
-    <div class="warning">
-        Production preset selected. Confirm intent before running.
-    </div>
-}
-
 <form method="post">
     <div class="panel">
         <input type="hidden" asp-for="Preset.Id" />

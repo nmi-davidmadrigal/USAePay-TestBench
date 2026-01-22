@@ -7,9 +7,6 @@ namespace UsaepaySupportTestbench.Pages.PayJs;
 public class IndexModel : PageModel
 {
     [BindProperty]
-    public EnvironmentType Environment { get; set; } = EnvironmentType.Sandbox;
-
-    [BindProperty]
     public string? PublicKey { get; set; }
 
     [TempData]
@@ -23,12 +20,6 @@ public class IndexModel : PageModel
         LastToken = HttpContext.Session.GetString("PayJs:Token");
         LastPaymentKey = HttpContext.Session.GetString("PayJs:PaymentKey");
 
-        var savedEnv = HttpContext.Session.GetString("PayJs:Environment");
-        if (!string.IsNullOrWhiteSpace(savedEnv) && Enum.TryParse<EnvironmentType>(savedEnv, out var parsed))
-        {
-            Environment = parsed;
-        }
-
         PublicKey = HttpContext.Session.GetString("PayJs:PublicKey");
     }
 
@@ -41,7 +32,6 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        HttpContext.Session.SetString("PayJs:Environment", Environment.ToString());
         HttpContext.Session.SetString("PayJs:PublicKey", PublicKey.Trim());
         StatusMessage = "Saved Pay.js configuration to this session.";
         return RedirectToPage();
@@ -49,7 +39,6 @@ public class IndexModel : PageModel
 
     public IActionResult OnPostClearConfig()
     {
-        HttpContext.Session.Remove("PayJs:Environment");
         HttpContext.Session.Remove("PayJs:PublicKey");
         StatusMessage = "Cleared Pay.js configuration from this session.";
         return RedirectToPage();

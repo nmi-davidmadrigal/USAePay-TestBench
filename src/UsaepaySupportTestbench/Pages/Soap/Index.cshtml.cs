@@ -15,9 +15,6 @@ public class IndexModel(
     public EnvironmentType Environment { get; set; } = EnvironmentType.Sandbox;
 
     [BindProperty]
-    public bool ConfirmProduction { get; set; }
-
-    [BindProperty]
     public SoapOperationType Operation { get; set; } = SoapOperationType.RunSale;
 
     [BindProperty]
@@ -99,11 +96,6 @@ public class IndexModel(
 
     public async Task<IActionResult> OnPostExecuteAsync(CancellationToken cancellationToken)
     {
-        if (Environment == EnvironmentType.Production && !ConfirmProduction)
-        {
-            ModelState.AddModelError(string.Empty, "Production requests require explicit confirmation.");
-        }
-
         ValidateInputs();
 
         if (!ModelState.IsValid)
@@ -182,8 +174,7 @@ public class IndexModel(
 
     public IActionResult OnPostClearCredentials()
     {
-        ClearStoredCredentials(EnvironmentType.Sandbox);
-        ClearStoredCredentials(EnvironmentType.Production);
+        ClearStoredCredentials();
         StatusMessage = "Cleared saved SOAP credentials for this session.";
         return RedirectToPage();
     }
@@ -273,12 +264,12 @@ public class IndexModel(
             return;
         }
 
-        var prefix = Environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        const string prefix = "Usaepay:Sandbox";
         if (!string.IsNullOrWhiteSpace(SourceKey) && !string.IsNullOrWhiteSpace(Pin))
         {
             HttpContext.Session.SetString($"{prefix}:SourceKey", SourceKey.Trim());
             HttpContext.Session.SetString($"{prefix}:Pin", Pin.Trim());
-            StatusMessage = $"Saved SOAP credentials for {Environment} in this session.";
+            StatusMessage = "Saved SOAP credentials for sandbox in this session.";
         }
 
         if (!string.IsNullOrWhiteSpace(EndpointUrl))
@@ -287,9 +278,9 @@ public class IndexModel(
         }
     }
 
-    private void ClearStoredCredentials(EnvironmentType environment)
+    private void ClearStoredCredentials()
     {
-        var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        const string prefix = "Usaepay:Sandbox";
         HttpContext.Session.Remove($"{prefix}:SourceKey");
         HttpContext.Session.Remove($"{prefix}:Pin");
         HttpContext.Session.Remove($"{prefix}:ApiKey");
@@ -299,14 +290,14 @@ public class IndexModel(
 
     private void LoadSavedHints()
     {
-        var prefix = Environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        const string prefix = "Usaepay:Sandbox";
         var session = HttpContext.Session;
 
         var sourceKey = session.GetString($"{prefix}:SourceKey") ?? session.GetString($"{prefix}:ApiKey");
         var pin = session.GetString($"{prefix}:Pin") ?? session.GetString($"{prefix}:ApiSecret");
         if (!string.IsNullOrWhiteSpace(sourceKey) && !string.IsNullOrWhiteSpace(pin))
         {
-            CredentialHint = $"Stored credentials available for {Environment}. Leave fields blank to use them.";
+            CredentialHint = "Stored credentials available for sandbox. Leave fields blank to use them.";
         }
 
         var endpoint = session.GetString($"{prefix}:SoapEndpoint");

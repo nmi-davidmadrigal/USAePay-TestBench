@@ -16,7 +16,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
         modelBuilder.Entity<Preset>()
             .Property(p => p.Environment)
-            .HasConversion<string>();
+            .HasConversion(
+                env => env.ToString(),
+                value => EnvironmentTypeHelper.Parse(value));
 
         modelBuilder.Entity<ScenarioRun>()
             .Property(r => r.ApiType)
@@ -24,7 +26,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
         modelBuilder.Entity<ScenarioRun>()
             .Property(r => r.Environment)
-            .HasConversion<string>();
+            .HasConversion(
+                env => env.ToString(),
+                value => EnvironmentTypeHelper.Parse(value));
 
         modelBuilder.Entity<ScenarioRun>()
             .HasIndex(r => r.CreatedAt);

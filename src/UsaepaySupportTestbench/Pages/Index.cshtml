@@ -12,10 +12,6 @@
         <span class="badge">Sandbox</span>
         <span>@(Model.EnvironmentStatus.SandboxConfigured ? "Configured" : "Missing base URLs")</span>
     </div>
-    <div>
-        <span class="badge">Production</span>
-        <span>@(Model.EnvironmentStatus.ProductionConfigured ? "Configured" : "Missing base URLs")</span>
-    </div>
     <p>Reachability checks are best-effort; use Manual Requests for live validation.</p>
 </div>
 

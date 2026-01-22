@@ -17,12 +17,12 @@ public sealed class RestProxyService(
     public async Task<ProxyResponse> ExecuteAsync(ProxyRestRequest request, CancellationToken cancellationToken)
     {
         var client = httpClientFactory.CreateClient("UsaepayProxy");
-        var baseUrl = ResolveBaseUrl(request.Environment);
+        var baseUrl = ResolveBaseUrl();
         var requestUrl = BuildRequestUrl(baseUrl, request.PathOrUrl);
 
         using var httpRequest = new HttpRequestMessage(new HttpMethod(request.Method), requestUrl);
         ApplyHeaders(httpRequest, request.Headers);
-        ApplyUsaepayApiHashAuthIfConfigured(httpRequest, request.Environment, request.Headers, httpContextAccessor.HttpContext?.Session);
+        ApplyUsaepayApiHashAuthIfConfigured(httpRequest, request.Headers, httpContextAccessor.HttpContext?.Session);
 
         if (!string.IsNullOrWhiteSpace(request.Body))
         {
@@ -51,15 +51,13 @@ public sealed class RestProxyService(
         };
     }
 
-    private string ResolveBaseUrl(EnvironmentType environment)
+    private string ResolveBaseUrl()
     {
-        var envOptions = environment == EnvironmentType.Production
-            ? options.Value.Production
-            : options.Value.Sandbox;
+        var envOptions = options.Value.Sandbox;
 
         if (string.IsNullOrWhiteSpace(envOptions.RestBaseUrl))
         {
-            throw new InvalidOperationException($"REST base URL not configured for {environment}.");
+            throw new InvalidOperationException("REST base URL not configured for sandbox.");
         }
 
         return envOptions.RestBaseUrl.TrimEnd('/');
@@ -67,7 +65,6 @@ public sealed class RestProxyService(
 
     private void ApplyUsaepayApiHashAuthIfConfigured(
         HttpRequestMessage httpRequest,
-        EnvironmentType environment,
         Dictionary<string, string>? requestHeaders,
         ISession? session)
     {
@@ -76,7 +73,7 @@ public sealed class RestProxyService(
             return;
         }
 
-        var (sourceKey, pin) = ResolveCredentials(environment, session);
+        var (sourceKey, pin) = ResolveCredentials(session);
         if (string.IsNullOrWhiteSpace(sourceKey) || string.IsNullOrWhiteSpace(pin))
         {
             return;
@@ -92,10 +89,10 @@ public sealed class RestProxyService(
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Basic", authKey);
     }
 
-    private (string? SourceKey, string? Pin) ResolveCredentials(EnvironmentType environment, ISession? session)
+    private (string? SourceKey, string? Pin) ResolveCredentials(ISession? session)
     {
         // Session overrides config (useful for local interactive debugging).
-        var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        const string prefix = "Usaepay:Sandbox";
         var sessionSourceKey = session?.GetString($"{prefix}:SourceKey") ?? session?.GetString($"{prefix}:ApiKey");
         var sessionPin = session?.GetString($"{prefix}:Pin") ?? session?.GetString($"{prefix}:ApiSecret");
         if (!string.IsNullOrWhiteSpace(sessionSourceKey) && !string.IsNullOrWhiteSpace(sessionPin))
@@ -103,9 +100,7 @@ public sealed class RestProxyService(
             return (sessionSourceKey, sessionPin);
         }
 
-        var envOptions = environment == EnvironmentType.Production
-            ? options.Value.Production
-            : options.Value.Sandbox;
+        var envOptions = options.Value.Sandbox;
 
         return (envOptions.SourceKey ?? envOptions.ApiKey, envOptions.Pin ?? envOptions.ApiSecret);
     }

@@ -24,15 +24,12 @@ public class IndexModel(
         EnvironmentStatus = new EnvironmentStatusViewModel
         {
             SandboxConfigured = !string.IsNullOrWhiteSpace(options.Value.Sandbox.RestBaseUrl)
-                                && !string.IsNullOrWhiteSpace(options.Value.Sandbox.SoapEndpoint),
-            ProductionConfigured = !string.IsNullOrWhiteSpace(options.Value.Production.RestBaseUrl)
-                                   && !string.IsNullOrWhiteSpace(options.Value.Production.SoapEndpoint)
+                                && !string.IsNullOrWhiteSpace(options.Value.Sandbox.SoapEndpoint)
         };
     }
 
     public sealed class EnvironmentStatusViewModel
     {
         public bool SandboxConfigured { get; set; }
-        public bool ProductionConfigured { get; set; }
     }
 }

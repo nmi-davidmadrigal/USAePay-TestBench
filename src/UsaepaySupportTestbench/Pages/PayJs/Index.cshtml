@@ -30,10 +30,6 @@
     <form method="post">
         <div class="form-row">
             <div>
-                <label>Environment</label>
-                <select asp-for="Environment" asp-items="Html.GetEnumSelectList<EnvironmentType>()"></select>
-            </div>
-            <div>
                 <label>Public Key</label>
                 <input asp-for="PublicKey" autocomplete="off" />
             </div>
@@ -87,8 +83,6 @@
     // Pay.js v1 docs:
     // https://help.usaepay.info/developer/payjs-v1/
     // Uses: new usaepay.Client(publicKey) + client.createPaymentCardEntry() + client.getPaymentKey(entry)
-
-    const envSelect = document.getElementById('Environment');
     const publicKeyInput = document.getElementById('PublicKey');
     const errorContainer = document.getElementById('paymentCardErrorContainer');
     const cardContainer = document.getElementById('paymentCardContainer');
@@ -120,12 +114,6 @@
     }
 
     function getPayJsScriptUrl() {
-        // Docs show https://www.usaepay.com/js/v1/pay.js
-        // Sandbox environments commonly serve Pay.js from sandbox.usaepay.com as well.
-        const env = (envSelect?.value || 'Sandbox').toLowerCase();
-        if (env === 'production') {
-            return 'https://www.usaepay.com/js/v1/pay.js';
-        }
         return 'https://sandbox.usaepay.com/js/v1/pay.js';
     }
 

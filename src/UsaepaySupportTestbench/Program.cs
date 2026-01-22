@@ -55,11 +55,6 @@ app.MapPost("/api/proxy/rest", async (
         ScenarioRunService scenarioRunService,
         CancellationToken cancellationToken) =>
     {
-        if (request.Environment == EnvironmentType.Production && !request.ConfirmProduction)
-        {
-            return Results.BadRequest(new { error = "Production requests require explicit confirmation." });
-        }
-
         var response = await restProxyService.ExecuteAsync(request, cancellationToken);
         await scenarioRunService.RecordRestAsync(request, response);
 
@@ -73,11 +68,6 @@ app.MapPost("/api/proxy/soap", async (
         ScenarioRunService scenarioRunService,
         CancellationToken cancellationToken) =>
     {
-        if (request.Environment == EnvironmentType.Production && !request.ConfirmProduction)
-        {
-            return Results.BadRequest(new { error = "Production requests require explicit confirmation." });
-        }
-
         var response = await soapProxyService.ExecuteAsync(request, cancellationToken);
         await scenarioRunService.RecordSoapAsync(request, response);
 
