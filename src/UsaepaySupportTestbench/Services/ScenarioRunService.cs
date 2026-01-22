@@ -76,13 +76,8 @@ public sealed class ScenarioRunService(
         return run;
     }
 
-    public async Task<ScenarioRun> ExecutePresetAsync(Preset preset, string? ticketNumber, bool confirmProduction, CancellationToken cancellationToken)
+    public async Task<ScenarioRun> ExecutePresetAsync(Preset preset, string? ticketNumber, CancellationToken cancellationToken)
     {
-        if (preset.Environment == EnvironmentType.Production && !confirmProduction)
-        {
-            throw new InvalidOperationException("Production requests require explicit confirmation.");
-        }
-
         if (preset.ApiType == ApiType.PayJsFlow)
         {
             throw new InvalidOperationException("Pay.js presets are client-side only.");
@@ -100,8 +95,7 @@ public sealed class ScenarioRunService(
                 Headers = RenderHeaders(DeserializeHeaders(preset.HeadersJson), variables),
                 Body = RenderTemplateOrNull(preset.BodyTemplate, variables),
                 PresetId = preset.Id,
-                TicketNumber = ticketNumber,
-                ConfirmProduction = confirmProduction
+                TicketNumber = ticketNumber
             };
 
             var response = await restProxyService.ExecuteAsync(request, cancellationToken);
@@ -116,8 +110,7 @@ public sealed class ScenarioRunService(
             Headers = RenderHeaders(DeserializeHeaders(preset.HeadersJson), variables),
             Body = RenderTemplate(preset.BodyTemplate ?? string.Empty, variables),
             PresetId = preset.Id,
-            TicketNumber = ticketNumber,
-            ConfirmProduction = confirmProduction
+            TicketNumber = ticketNumber
         };
 
         var soapResponse = await soapProxyService.ExecuteAsync(soapRequest, cancellationToken);

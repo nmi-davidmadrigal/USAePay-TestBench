@@ -9,6 +9,20 @@ public enum ApiType
 
 public enum EnvironmentType
 {
-    Sandbox = 0,
-    Production = 1
+    Sandbox = 0
+}
+
+public static class EnvironmentTypeHelper
+{
+    public static EnvironmentType Parse(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return EnvironmentType.Sandbox;
+        }
+
+        return Enum.TryParse<EnvironmentType>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : EnvironmentType.Sandbox;
+    }
 }

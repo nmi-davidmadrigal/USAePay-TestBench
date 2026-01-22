@@ -3,7 +3,6 @@ namespace UsaepaySupportTestbench.Models;
 public sealed class UsaepayOptions
 {
     public UsaepayEnvironmentOptions Sandbox { get; set; } = new();
-    public UsaepayEnvironmentOptions Production { get; set; } = new();
 }
 
 public sealed class UsaepayEnvironmentOptions

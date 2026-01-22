@@ -6,13 +6,6 @@
 
 <h1>Manual Requests</h1>
 
-@if (Model.Environment == EnvironmentType.Production)
-{
-    <div class="warning">
-        Production environment selected. Confirm before sending.
-    </div>
-}
-
 <form method="post">
     <div class="panel">
         <p>Use REST fields for REST requests and SOAP fields for SOAP requests.</p>
@@ -24,13 +17,6 @@
             <div>
                 <label>Environment</label>
                 <select asp-for="Environment" asp-items="Html.GetEnumSelectList<EnvironmentType>()"></select>
-            </div>
-            <div>
-                <label>Confirm Production</label>
-                <select asp-for="ConfirmProduction">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                </select>
             </div>
         </div>
 

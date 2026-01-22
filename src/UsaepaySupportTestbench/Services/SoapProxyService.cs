@@ -59,13 +59,11 @@ public sealed class SoapProxyService(
             return request.EndpointUrl;
         }
 
-        var envOptions = request.Environment == EnvironmentType.Production
-            ? options.Value.Production
-            : options.Value.Sandbox;
+        var envOptions = options.Value.Sandbox;
 
         if (string.IsNullOrWhiteSpace(envOptions.SoapEndpoint))
         {
-            throw new InvalidOperationException($"SOAP endpoint not configured for {request.Environment}.");
+            throw new InvalidOperationException("SOAP endpoint not configured for sandbox.");
         }
 
         return envOptions.SoapEndpoint;

@@ -18,8 +18,8 @@ public sealed class UsaepaySoapService(
     public async Task<SoapOperationResult> ExecuteAsync(SoapTransactionInput input, CancellationToken cancellationToken)
     {
         var session = httpContextAccessor.HttpContext?.Session;
-        var endpoint = ResolveEndpoint(input.Environment, input.EndpointUrl, session);
-        var (sourceKey, pin) = ResolveCredentials(input.Environment, input.SourceKey, input.Pin, session);
+        var endpoint = ResolveEndpoint(input.EndpointUrl, session);
+        var (sourceKey, pin) = ResolveCredentials(input.SourceKey, input.Pin, session);
         if (string.IsNullOrWhiteSpace(sourceKey) || string.IsNullOrWhiteSpace(pin))
         {
             throw new InvalidOperationException("SOAP Source Key and PIN are required. Provide them in the form, session, or appsettings.");
@@ -111,7 +111,7 @@ public sealed class UsaepaySoapService(
         return new ueSoapServerPortTypeClient(binding, new EndpointAddress(endpointUrl));
     }
 
-    private string ResolveEndpoint(EnvironmentType environment, string? endpointOverride, ISession? session)
+    private string ResolveEndpoint(string? endpointOverride, ISession? session)
     {
         if (!string.IsNullOrWhiteSpace(endpointOverride))
         {
@@ -120,7 +120,7 @@ public sealed class UsaepaySoapService(
             return endpoint;
         }
 
-        var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        const string prefix = "Usaepay:Sandbox";
         var sessionEndpoint = session?.GetString($"{prefix}:SoapEndpoint");
         if (!string.IsNullOrWhiteSpace(sessionEndpoint))
         {
@@ -129,13 +129,11 @@ public sealed class UsaepaySoapService(
             return endpoint;
         }
 
-        var envOptions = environment == EnvironmentType.Production
-            ? options.Value.Production
-            : options.Value.Sandbox;
+        var envOptions = options.Value.Sandbox;
 
         if (string.IsNullOrWhiteSpace(envOptions.SoapEndpoint))
         {
-            throw new InvalidOperationException($"SOAP endpoint not configured for {environment}.");
+            throw new InvalidOperationException("SOAP endpoint not configured for sandbox.");
         }
 
         var resolvedEndpoint = NormalizeEndpoint(envOptions.SoapEndpoint);
@@ -144,7 +142,6 @@ public sealed class UsaepaySoapService(
     }
 
     private (string? SourceKey, string? Pin) ResolveCredentials(
-        EnvironmentType environment,
         string? sourceKeyOverride,
         string? pinOverride,
         ISession? session)
@@ -154,7 +151,7 @@ public sealed class UsaepaySoapService(
             return (sourceKeyOverride.Trim(), pinOverride.Trim());
         }
 
-        var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        const string prefix = "Usaepay:Sandbox";
         var sessionSourceKey = session?.GetString($"{prefix}:SourceKey") ?? session?.GetString($"{prefix}:ApiKey");
         var sessionPin = session?.GetString($"{prefix}:Pin") ?? session?.GetString($"{prefix}:ApiSecret");
         if (!string.IsNullOrWhiteSpace(sessionSourceKey) && !string.IsNullOrWhiteSpace(sessionPin))
@@ -162,9 +159,7 @@ public sealed class UsaepaySoapService(
             return (sessionSourceKey, sessionPin);
         }
 
-        var envOptions = environment == EnvironmentType.Production
-            ? options.Value.Production
-            : options.Value.Sandbox;
+        var envOptions = options.Value.Sandbox;
 
         return (envOptions.SourceKey ?? envOptions.ApiKey, envOptions.Pin ?? envOptions.ApiSecret);
     }

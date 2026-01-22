@@ -16,9 +16,6 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
     [BindProperty(SupportsGet = true)]
     public string? TicketNumber { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public bool ConfirmProduction { get; set; }
-
     [BindProperty]
     public EnvironmentType CredentialEnvironment { get; set; } = EnvironmentType.Sandbox;
 
@@ -55,22 +52,15 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
             return NotFound();
         }
 
-        if (preset.Environment == EnvironmentType.Production && !ConfirmProduction)
+        try
         {
-            ModelState.AddModelError(string.Empty, "Production requests require explicit confirmation.");
+            LastRun = await scenarioRunService.ExecutePresetAsync(preset, TicketNumber, cancellationToken);
+            // Show results immediately (request/response are on the Logs page).
+            return RedirectToPage("/Logs/Index", new { id = LastRun.Id });
         }
-        else
+        catch (InvalidOperationException ex)
         {
-            try
-            {
-                LastRun = await scenarioRunService.ExecutePresetAsync(preset, TicketNumber, ConfirmProduction, cancellationToken);
-                // Show results immediately (request/response are on the Logs page).
-                return RedirectToPage("/Logs/Index", new { id = LastRun.Id });
-            }
-            catch (InvalidOperationException ex)
-            {
-                ModelState.AddModelError(string.Empty, ex.Message);
-            }
+            ModelState.AddModelError(string.Empty, ex.Message);
         }
 
         await OnGetAsync();
@@ -79,7 +69,7 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
 
     public IActionResult OnPostSetCredentials(string action)
     {
-        var prefix = CredentialEnvironment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
+        const string prefix = "Usaepay:Sandbox";
 
         if (string.Equals(action, "clear", StringComparison.OrdinalIgnoreCase))
         {
@@ -87,7 +77,7 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
             HttpContext.Session.Remove($"{prefix}:Pin");
             HttpContext.Session.Remove($"{prefix}:ApiKey");
             HttpContext.Session.Remove($"{prefix}:ApiSecret");
-            CredentialStatus = $"Cleared {CredentialEnvironment} credentials from this session.";
+            CredentialStatus = "Cleared sandbox credentials from this session.";
         }
         else
         {
@@ -105,7 +95,7 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
 
             HttpContext.Session.SetString($"{prefix}:SourceKey", SourceKey.Trim());
             HttpContext.Session.SetString($"{prefix}:Pin", Pin.Trim());
-            CredentialStatus = $"Saved {CredentialEnvironment} credentials to this session.";
+            CredentialStatus = "Saved sandbox credentials to this session.";
         }
 
         // Avoid leaking PIN in query string: redirect back to current filter state.
@@ -113,8 +103,7 @@ public class IndexModel(PresetService presetService, ScenarioRunService scenario
         {
             SearchTerm,
             FilterApiType,
-            TicketNumber,
-            ConfirmProduction
+            TicketNumber
         });
     }
 }

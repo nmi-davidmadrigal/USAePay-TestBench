@@ -15,8 +15,6 @@ public sealed class ProxyRestRequest
     public Guid? PresetId { get; set; }
 
     public string? TicketNumber { get; set; }
-
-    public bool ConfirmProduction { get; set; }
 }
 
 public sealed class ProxySoapRequest
@@ -34,8 +32,6 @@ public sealed class ProxySoapRequest
     public Guid? PresetId { get; set; }
 
     public string? TicketNumber { get; set; }
-
-    public bool ConfirmProduction { get; set; }
 }
 
 public sealed class ProxyResponse
