@@ -62,10 +62,6 @@
                 <label>PIN</label>
                 <input asp-for="Pin" type="password" />
             </div>
-            <div>
-                <label>Software Key</label>
-                <input asp-for="SoftwareKey" placeholder="From your WSDL URL" />
-            </div>
         </div>
         <div class="form-row">
             <div>
@@ -75,8 +71,8 @@
         </div>
         <div class="form-row">
             <div>
-                <label>SOAP Endpoint Override</label>
-                <input asp-for="EndpointUrl" placeholder="https://sandbox.usaepay.com/soap/gate/XXXX" />
+                <label>SOAP Endpoint Override (WSDL URL accepted)</label>
+                <input asp-for="EndpointUrl" placeholder="https://sandbox.usaepay.com/soap/gate/KEY/usaepay.wsdl" />
             </div>
             <div>
                 <label>Ticket Number (optional)</label>

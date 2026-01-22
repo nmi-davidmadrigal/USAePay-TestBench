@@ -59,10 +59,10 @@ public sealed partial class RedactionService
         return new string('*', Math.Max(0, digits.Length - 4)) + last4;
     }
 
-    [GeneratedRegex("\"(?<key>cardNumber|pan|cvv|cvc|securityCode|trackData|track1|track2|authorization|apiKey|apiSecret|sourceKey|pin|accessToken|paymentKey|token|softwareKey)\"\\s*:\\s*\"(?<value>[^\"]*)\"", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("\"(?<key>cardNumber|pan|cvv|cvc|securityCode|trackData|track1|track2|authorization|apiKey|apiSecret|sourceKey|pin|accessToken|paymentKey|token)\"\\s*:\\s*\"(?<value>[^\"]*)\"", RegexOptions.IgnoreCase)]
     private static partial Regex JsonSensitiveKeyRegex();
 
-    [GeneratedRegex("<(?<key>cardNumber|pan|cvv|cvc|securityCode|trackData|track1|track2|authorization|apiKey|apiSecret|sourceKey|pin|accessToken|paymentKey|token|softwareKey)>(?<value>[^<]*)</\\k<key>>", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("<(?<key>cardNumber|pan|cvv|cvc|securityCode|trackData|track1|track2|authorization|apiKey|apiSecret|sourceKey|pin|accessToken|paymentKey|token)>(?<value>[^<]*)</\\k<key>>", RegexOptions.IgnoreCase)]
     private static partial Regex XmlSensitiveKeyRegex();
 
     [GeneratedRegex("\\b\\d{12,19}\\b")]

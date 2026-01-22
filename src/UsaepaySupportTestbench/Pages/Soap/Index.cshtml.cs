@@ -33,9 +33,6 @@ public class IndexModel(
     public string? EndpointUrl { get; set; }
 
     [BindProperty]
-    public string? SoftwareKey { get; set; }
-
-    [BindProperty]
     public bool RememberCredentials { get; set; }
 
     [BindProperty]
@@ -122,7 +119,6 @@ public class IndexModel(
             Environment = Environment,
             Operation = Operation,
             EndpointUrl = EndpointUrl,
-            SoftwareKey = SoftwareKey,
             SourceKey = SourceKey,
             Pin = Pin,
             ClientIp = ClientIp,
@@ -289,11 +285,6 @@ public class IndexModel(
         {
             HttpContext.Session.SetString($"{prefix}:SoapEndpoint", EndpointUrl.Trim());
         }
-
-        if (!string.IsNullOrWhiteSpace(SoftwareKey))
-        {
-            HttpContext.Session.SetString($"{prefix}:SoapSoftwareKey", SoftwareKey.Trim());
-        }
     }
 
     private void ClearStoredCredentials(EnvironmentType environment)
@@ -304,7 +295,6 @@ public class IndexModel(
         HttpContext.Session.Remove($"{prefix}:ApiKey");
         HttpContext.Session.Remove($"{prefix}:ApiSecret");
         HttpContext.Session.Remove($"{prefix}:SoapEndpoint");
-        HttpContext.Session.Remove($"{prefix}:SoapSoftwareKey");
     }
 
     private void LoadSavedHints()
@@ -325,14 +315,6 @@ public class IndexModel(
             EndpointHint = $"Stored endpoint override: {endpoint}";
         }
 
-        var softwareKey = session.GetString($"{prefix}:SoapSoftwareKey");
-        if (!string.IsNullOrWhiteSpace(softwareKey))
-        {
-            var keyHint = "Stored software key available.";
-            EndpointHint = string.IsNullOrWhiteSpace(EndpointHint)
-                ? keyHint
-                : $"{EndpointHint} {keyHint}";
-        }
     }
 
     private static string SerializeRequestSnapshot(SoapTransactionInput input, string? endpointUrl)
@@ -342,7 +324,6 @@ public class IndexModel(
             operation = input.Operation.ToString(),
             environment = input.Environment.ToString(),
             endpointUrl,
-            softwareKey = input.SoftwareKey,
             sourceKey = input.SourceKey,
             clientIp = input.ClientIp,
             amount = input.Amount,

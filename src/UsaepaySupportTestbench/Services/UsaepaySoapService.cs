@@ -18,7 +18,7 @@ public sealed class UsaepaySoapService(
     public async Task<SoapOperationResult> ExecuteAsync(SoapTransactionInput input, CancellationToken cancellationToken)
     {
         var session = httpContextAccessor.HttpContext?.Session;
-        var endpoint = ResolveEndpoint(input.Environment, input.EndpointUrl, input.SoftwareKey, session);
+        var endpoint = ResolveEndpoint(input.Environment, input.EndpointUrl, session);
         var (sourceKey, pin) = ResolveCredentials(input.Environment, input.SourceKey, input.Pin, session);
         if (string.IsNullOrWhiteSpace(sourceKey) || string.IsNullOrWhiteSpace(pin))
         {
@@ -111,16 +111,13 @@ public sealed class UsaepaySoapService(
         return new ueSoapServerPortTypeClient(binding, new EndpointAddress(endpointUrl));
     }
 
-    private string ResolveEndpoint(
-        EnvironmentType environment,
-        string? endpointOverride,
-        string? softwareKeyOverride,
-        ISession? session)
+    private string ResolveEndpoint(EnvironmentType environment, string? endpointOverride, ISession? session)
     {
         if (!string.IsNullOrWhiteSpace(endpointOverride))
         {
             var endpoint = NormalizeEndpoint(endpointOverride);
-            return ApplySoftwareKeyIfNeeded(endpoint, ResolveSoftwareKey(environment, softwareKeyOverride, session));
+            EnsureEndpointHasWdslKey(endpoint);
+            return endpoint;
         }
 
         var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
@@ -128,7 +125,8 @@ public sealed class UsaepaySoapService(
         if (!string.IsNullOrWhiteSpace(sessionEndpoint))
         {
             var endpoint = NormalizeEndpoint(sessionEndpoint);
-            return ApplySoftwareKeyIfNeeded(endpoint, ResolveSoftwareKey(environment, softwareKeyOverride, session));
+            EnsureEndpointHasWdslKey(endpoint);
+            return endpoint;
         }
 
         var envOptions = environment == EnvironmentType.Production
@@ -141,28 +139,8 @@ public sealed class UsaepaySoapService(
         }
 
         var resolvedEndpoint = NormalizeEndpoint(envOptions.SoapEndpoint);
-        var softwareKey = ResolveSoftwareKey(environment, softwareKeyOverride, session);
-        return ApplySoftwareKeyIfNeeded(resolvedEndpoint, softwareKey);
-    }
-
-    private string? ResolveSoftwareKey(EnvironmentType environment, string? overrideKey, ISession? session)
-    {
-        if (!string.IsNullOrWhiteSpace(overrideKey))
-        {
-            return overrideKey.Trim();
-        }
-
-        var prefix = environment == EnvironmentType.Production ? "Usaepay:Production" : "Usaepay:Sandbox";
-        var sessionKey = session?.GetString($"{prefix}:SoapSoftwareKey");
-        if (!string.IsNullOrWhiteSpace(sessionKey))
-        {
-            return sessionKey.Trim();
-        }
-
-        var envOptions = environment == EnvironmentType.Production
-            ? options.Value.Production
-            : options.Value.Sandbox;
-        return envOptions.SoapSoftwareKey;
+        EnsureEndpointHasWdslKey(resolvedEndpoint);
+        return resolvedEndpoint;
     }
 
     private (string? SourceKey, string? Pin) ResolveCredentials(
@@ -333,20 +311,17 @@ public sealed class UsaepaySoapService(
         return trimmed.TrimEnd('/');
     }
 
-    private static string ApplySoftwareKeyIfNeeded(string endpoint, string? softwareKey)
+    private static void EnsureEndpointHasWdslKey(string endpoint)
     {
         var normalized = endpoint.TrimEnd('/');
         if (!normalized.EndsWith("/soap/gate", StringComparison.OrdinalIgnoreCase))
         {
-            return endpoint;
+            return;
         }
 
-        if (string.IsNullOrWhiteSpace(softwareKey))
-        {
-            throw new InvalidOperationException(
-                "SOAP endpoint requires a software key. Supply the key from your WSDL URL or add Usaepay:SoapSoftwareKey.");
-        }
-
-        return $"{normalized}/{softwareKey.Trim()}";
+        throw new InvalidOperationException(
+            "SOAP endpoint is missing the WSDL key. Use your Developer Center WSDL URL " +
+            "(https://sandbox.usaepay.com/soap/gate/<key>/usaepay.wsdl) or set SoapEndpoint " +
+            "to https://sandbox.usaepay.com/soap/gate/<key>.");
     }
 }
